@@ -10,21 +10,16 @@
         "typescript": "5.9.2",
       },
     },
-    "apps/docs": {
-      "name": "docs",
+    "apps/alpaca-cli": {
+      "name": "alpaca-cli",
       "version": "0.1.0",
-      "dependencies": {
-        "@repo/ui": "*",
-        "next": "16.1.5",
-        "react": "^19.2.0",
-        "react-dom": "^19.2.0",
+      "bin": {
+        "alpaca-cli": "./src/index.ts",
       },
       "devDependencies": {
         "@repo/eslint-config": "*",
         "@repo/typescript-config": "*",
         "@types/node": "^22.15.3",
-        "@types/react": "19.2.2",
-        "@types/react-dom": "19.2.2",
         "eslint": "^9.39.1",
         "typescript": "5.9.2",
       },
@@ -236,6 +231,8 @@
 
     "ajv": ["ajv@6.12.6", "", { "dependencies": { "fast-deep-equal": "^3.1.1", "fast-json-stable-stringify": "^2.0.0", "json-schema-traverse": "^0.4.1", "uri-js": "^4.2.2" } }, "sha512-j3fVLgvTo527anyYyJOGTYJbG+vnnQYvE0m5mmkc1TK+nxAppkCLMIL0aZ4dblVCNoGShhm+kzE4ZUykBoMg4g=="],
 
+    "alpaca-cli": ["alpaca-cli@workspace:apps/alpaca-cli"],
+
     "ansi-styles": ["ansi-styles@4.3.0", "", { "dependencies": { "color-convert": "^2.0.1" } }, "sha512-zbB9rCJAT1rbjiVDb2hqKFHNYLxgtk8NURxZ3IZwD3F6NtxbXZQCnnSi1Lkx+IDohdPlFp222wVALIheZJQSEg=="],
 
     "argparse": ["argparse@2.0.1", "", {}, "sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q=="],
@@ -305,8 +302,6 @@
     "define-properties": ["define-properties@1.2.1", "", { "dependencies": { "define-data-property": "^1.0.1", "has-property-descriptors": "^1.0.0", "object-keys": "^1.1.1" } }, "sha512-8QmQKqEASLd5nx0U1B1okLElbUuuttJ/AnYmRXbbbGDWh6uS208EjD4Xqq/I9wK7u0v6O08XhTWnt5XtEbR6Dg=="],
 
     "detect-libc": ["detect-libc@2.1.2", "", {}, "sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ=="],
-
-    "docs": ["docs@workspace:apps/docs"],
 
     "doctrine": ["doctrine@2.1.0", "", { "dependencies": { "esutils": "^2.0.2" } }, "sha512-35mSku4ZXK0vfCuHEDAwt55dg2jNajHZ1odvF+8SSr82EsZY4QmXfuWso8oEd8zRhVObSN18aM0CjSdoBX7zIw=="],
 
