@@ -7,6 +7,7 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
+    "web": "turbo dev --filter=web",
     "dev:cli": "bun run --watch apps/cli/src/index.ts",
     "cli": "bun run apps/cli/src/index.ts"
   },
