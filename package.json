@@ -6,7 +6,9 @@
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "check-types": "turbo run check-types"
+    "check-types": "turbo run check-types",
+    "dev:cli": "bun run --watch apps/cli/src/index.ts",
+    "cli": "bun run apps/cli/src/index.ts"
   },
   "devDependencies": {
     "prettier": "^3.7.4",
@@ -22,3 +24,4 @@
     "packages/*"
   ]
 }
+

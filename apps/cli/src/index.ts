@@ -11,10 +11,10 @@ const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8")) as {
   version?: string;
 };
 
-const usage = `alpaca-cli\n\nUsage:\n  alpaca-cli [options]\n\nOptions:\n  -h, --help      Show help\n  -v, --version   Show version`;
+const usage = `cli\n\nUsage:\n  cli [options]\n\nOptions:\n  -h, --help      Show help\n  -v, --version   Show version`;
 
 if (args.length === 0) {
-  console.log("alpaca-cli is ready");
+  console.log("cli is ready");
   process.exit(0);
 }
 
@@ -29,5 +29,5 @@ if (args.includes("-v") || args.includes("--version")) {
 }
 
 console.error(`Unknown option: ${args[0]}`);
-console.error("Run 'alpaca-cli --help' for usage.");
+console.error("Run 'cli --help' for usage.");
 process.exit(1);

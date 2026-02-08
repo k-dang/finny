@@ -1,4 +1,4 @@
-# alpaca-cli
+# cli
 
 Bun-native CLI app.
 
@@ -17,4 +17,4 @@ Bun-native CLI app.
 
 After linking/installing the package bin:
 
-- `alpaca-cli --help`
+- `cli --help`

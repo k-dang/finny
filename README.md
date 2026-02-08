@@ -17,7 +17,7 @@ This Turborepo includes the following packages/apps:
 ### Apps and Packages
 
 - `web`: another [Next.js](https://nextjs.org/) app
-- `alpaca-cli`: a Bun-native CLI app
+- `cli`: a Bun-native CLI app
 - `@repo/ui`: a stub React component library shared by `web`
 - `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
 - `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
