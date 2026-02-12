@@ -2,13 +2,17 @@
 
 import { ReactNode } from "react";
 
-interface ButtonProps {
+interface AlertButtonProps {
   children: ReactNode;
   className?: string;
   appName: string;
 }
 
-export const Button = ({ children, className, appName }: ButtonProps) => {
+export function AlertButton({
+  children,
+  className,
+  appName,
+}: AlertButtonProps) {
   return (
     <button
       className={className}
@@ -17,4 +21,4 @@ export const Button = ({ children, className, appName }: ButtonProps) => {
       {children}
     </button>
   );
-};
+}

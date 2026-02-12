@@ -4,7 +4,6 @@
 This repository is a Bun-powered Turborepo.
 - `apps/web`: Next.js App Router frontend (`app/`, `public/`).
 - `apps/cli`: Bun-native CLI entrypoint at `src/index.ts`.
-- `packages/ui`: Shared React components imported as `@repo/ui/*`.
 - `packages/eslint-config`: Shared ESLint presets.
 - `packages/typescript-config`: Shared `tsconfig` bases.
 - Root config: `turbo.json`, `package.json`, `bun.lock`.
@@ -23,11 +22,8 @@ Run commands from the repo root unless noted.
 - `bun run cli`: Run the CLI app.
 
 ## Coding Style & Naming Conventions
-- Language: TypeScript + ESM modules.
-- Formatting: Prettier defaults (2-space indentation, double quotes as generated).
-- Linting: shared config from `@repo/eslint-config` with zero warnings allowed in app scripts.
 - React components: `PascalCase`; hooks/functions/variables: `camelCase`.
-- File naming: prefer descriptive names; component files in `packages/ui/src` are lowercase (`button.tsx`, `card.tsx`).
+- File naming: prefer descriptive names.
 
 ## Testing Guidelines
 There is no dedicated test framework configured yet. Minimum quality gate for every change:
