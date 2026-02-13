@@ -1,0 +1,9 @@
+/.claude/
+/.agents/
+**/.next/
+**/dist/
+**/build/
+**/out/
+**/.turbo/
+**/coverage/
+**/.vercel/
