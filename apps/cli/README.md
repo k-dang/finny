@@ -20,6 +20,7 @@ From repo root:
 - `bun run cli` (no args prints "cli is ready")
 - `bun run cli --help`
 - `bun run cli chat`
+- `bun run cli chat --verbose`
 
 From `apps/cli`:
 
@@ -46,14 +47,23 @@ From repo root (preserves stdin/TTY for REPL input):
 From `apps/cli`:
 
 - `bun run src/index.ts chat`
+- `bun run src/index.ts chat --verbose`
 - `cli chat`
+- `cli chat --verbose`
 
 REPL commands:
 
 - `/help` Show chat commands
+- `/status` Show turn, message, and verbosity state
+- `/verbose on|off` Toggle step and tool traces while running
+- `/undo` Remove the most recent completed turn (multi-level)
+- `/retry` Retry the last input
 - `/clear` Clear in-memory conversation history
 - `/exit` Exit chat
 - `/quit` Exit chat
+
+By default, chat runs in a clean output mode. Use `--verbose` or `/verbose on`
+to show step and tool traces.
 
 ## Parsing behavior
 

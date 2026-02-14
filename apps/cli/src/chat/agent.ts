@@ -1,5 +1,5 @@
 import { gateway, stepCountIs, ToolLoopAgent } from "ai";
-import { tools } from "./tools/index.js";
+import { tools } from "./tools";
 
 export function createAgent() {
   return new ToolLoopAgent({

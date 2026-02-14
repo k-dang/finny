@@ -1,16 +1,29 @@
 import { createInterface } from "node:readline/promises";
 import type { ModelMessage } from "ai";
-import { createAgent } from "./agent.js";
+import { createAgent } from "./agent";
+import { createEventRenderer } from "./eventRenderer";
 
-export async function runChat(): Promise<void> {
+type RunChatOptions = {
+  verbose?: boolean;
+};
+
+type CompletedTurn = {
+  startIndex: number;
+  userInput: string;
+};
+
+export async function runChat(options: RunChatOptions = {}): Promise<void> {
   if (!process.env.AI_GATEWAY_API_KEY) {
     console.error("Missing AI_GATEWAY_API_KEY.");
     console.error("Set AI_GATEWAY_API_KEY to use `cli chat` with AI Gateway.");
     process.exit(1);
   }
 
+  let verbose = options.verbose ?? false;
   const agent = createAgent();
+  const eventRenderer = createEventRenderer();
   const messages: ModelMessage[] = [];
+  const turnHistory: CompletedTurn[] = [];
   const rl = createInterface({
     input: process.stdin,
     output: process.stdout,
@@ -18,14 +31,14 @@ export async function runChat(): Promise<void> {
   });
 
   let currentAbort: AbortController | null = null;
+  let lastRetriableInput: string | null = null;
   let awaitingInput = false;
   let sigintCount = 0;
 
   const handleSigint = () => {
     if (currentAbort) {
+      process.stderr.write("\nInterrupting response...\n");
       currentAbort.abort("Interrupted by user.");
-      currentAbort = null;
-      process.stderr.write("\nInterrupted current response.\n");
       return;
     }
 
@@ -44,12 +57,194 @@ export async function runChat(): Promise<void> {
 
   process.on("SIGINT", handleSigint);
 
-  console.log("Chat started. Type /help for commands.");
+  const printHelp = () => {
+    console.log(
+      "Commands:\n  /help            Show command help\n  /status          Show current chat status\n  /verbose on|off  Toggle step and tool traces\n  /undo            Remove the most recent completed turn\n  /retry           Retry the last input\n  /clear           Clear conversation history\n  /exit            Exit chat\n  /quit            Exit chat",
+    );
+  };
+
+  const runTurn = async (input: string): Promise<void> => {
+    const turnStartIndex = messages.length;
+    lastRetriableInput = input;
+
+    messages.push({
+      role: "user",
+      content: input,
+    });
+
+    const turnAbort = new AbortController();
+    currentAbort = turnAbort;
+
+    let streamStepNumber = 0;
+    let summaryStepNumber = 0;
+    let assistantStarted = false;
+    let sawAbortEvent = false;
+    let thinkingShownInTTY = false;
+
+    const showThinking = () => {
+      if (process.stdout.isTTY) {
+        process.stdout.write("assistant> thinking...");
+        thinkingShownInTTY = true;
+        return;
+      }
+
+      process.stdout.write("assistant> thinking...\n");
+    };
+
+    const clearThinking = () => {
+      if (!thinkingShownInTTY) {
+        return;
+      }
+
+      process.stdout.write("\r\u001b[2K");
+      thinkingShownInTTY = false;
+    };
+
+    showThinking();
+
+    try {
+      const result = await agent.stream({
+        messages,
+        abortSignal: turnAbort.signal,
+        onStepFinish: ({ finishReason, toolCalls, usage }) => {
+          if (!verbose) {
+            return;
+          }
+
+          summaryStepNumber += 1;
+          eventRenderer.renderStepSummary({
+            stepNumber: summaryStepNumber,
+            finishReason,
+            toolNames: toolCalls.map(({ toolName }) => toolName),
+            usage,
+          });
+        },
+      });
+
+      for await (const part of result.fullStream) {
+        switch (part.type) {
+          case "start-step": {
+            if (verbose) {
+              streamStepNumber += 1;
+              eventRenderer.renderStepStart({ stepNumber: streamStepNumber });
+            }
+            break;
+          }
+          case "finish-step": {
+            if (verbose) {
+              const stepNumber = streamStepNumber === 0 ? 1 : streamStepNumber;
+              eventRenderer.renderStepFinish({
+                stepNumber,
+                finishReason: part.finishReason,
+              });
+            }
+            break;
+          }
+          case "tool-call": {
+            if (verbose) {
+              const stepNumber = streamStepNumber === 0 ? 1 : streamStepNumber;
+              eventRenderer.renderToolCall({
+                stepNumber,
+                toolName: part.toolName,
+                toolCallId: part.toolCallId,
+                input: part.input,
+              });
+            }
+            break;
+          }
+          case "tool-result": {
+            if (verbose) {
+              const stepNumber = streamStepNumber === 0 ? 1 : streamStepNumber;
+              eventRenderer.renderToolResult({
+                stepNumber,
+                toolName: part.toolName,
+                toolCallId: part.toolCallId,
+                output: part.output,
+              });
+            }
+            break;
+          }
+          case "tool-error": {
+            if (verbose) {
+              const stepNumber = streamStepNumber === 0 ? 1 : streamStepNumber;
+              eventRenderer.renderToolError({
+                stepNumber,
+                toolName: part.toolName,
+                toolCallId: part.toolCallId,
+                error: part.error,
+              });
+            }
+            break;
+          }
+          case "abort": {
+            clearThinking();
+            sawAbortEvent = true;
+            eventRenderer.renderAbort(part.reason);
+            break;
+          }
+          case "error": {
+            clearThinking();
+            eventRenderer.renderStreamError(part.error);
+            break;
+          }
+          case "text-delta": {
+            if (!assistantStarted) {
+              clearThinking();
+              process.stdout.write("assistant> ");
+              assistantStarted = true;
+            }
+
+            process.stdout.write(part.text);
+            break;
+          }
+          default: {
+            break;
+          }
+        }
+      }
+
+      clearThinking();
+
+      if (assistantStarted) {
+        process.stdout.write("\n");
+      }
+
+      const response = await result.response;
+      messages.push(...response.messages);
+      turnHistory.push({ startIndex: turnStartIndex, userInput: input });
+    } catch (error) {
+      clearThinking();
+
+      if (assistantStarted) {
+        process.stdout.write("\n");
+      }
+
+      messages.length = turnStartIndex;
+
+      if (turnAbort.signal.aborted) {
+        if (!sawAbortEvent) {
+          eventRenderer.renderAbort("Interrupted by user.");
+        }
+      } else {
+        const message =
+          error instanceof Error ? error.message : "Unknown chat error.";
+        eventRenderer.renderChatError(message);
+      }
+    } finally {
+      if (currentAbort === turnAbort) {
+        currentAbort = null;
+      }
+    }
+  };
+
+  console.log(
+    `Chat started. Type /help for commands. Verbose traces ${verbose ? "on" : "off"}.`,
+  );
 
   try {
     while (true) {
       awaitingInput = true;
-      const input = (await rl.question("> ")).trim();
+      const input = (await rl.question("you> ")).trim();
       awaitingInput = false;
       sigintCount = 0;
 
@@ -57,59 +252,94 @@ export async function runChat(): Promise<void> {
         continue;
       }
 
-      if (input === "/exit" || input === "/quit") {
-        console.log("Goodbye.");
-        return;
-      }
+      if (input.startsWith("/")) {
+        if (input === "/exit" || input === "/quit") {
+          console.log("Goodbye.");
+          return;
+        }
 
-      if (input === "/help") {
-        console.log("Commands: /help, /clear, /exit, /quit");
+        if (input === "/help") {
+          printHelp();
+          continue;
+        }
+
+        if (input === "/clear") {
+          messages.length = 0;
+          turnHistory.length = 0;
+          lastRetriableInput = null;
+          console.log("Cleared conversation history.");
+          continue;
+        }
+
+        if (input === "/status") {
+          const turnCount = turnHistory.length;
+          const messageCount = messages.length;
+          console.log(
+            `Status: turns=${turnCount}, messages=${messageCount}, verbose=${verbose ? "on" : "off"}.`,
+          );
+          continue;
+        }
+
+        if (input.startsWith("/verbose")) {
+          const [, mode] = input.split(/\s+/, 2);
+          const normalizedMode = mode?.toLowerCase();
+
+          if (normalizedMode === "on") {
+            verbose = true;
+            console.log("Verbose traces enabled.");
+            continue;
+          }
+
+          if (normalizedMode === "off") {
+            verbose = false;
+            console.log("Verbose traces disabled.");
+            continue;
+          }
+
+          console.log("Usage: /verbose on|off");
+          continue;
+        }
+
+        if (input === "/undo") {
+          const removedTurn = turnHistory.pop();
+          if (!removedTurn) {
+            console.log("Nothing to undo.");
+            continue;
+          }
+
+          messages.length = removedTurn.startIndex;
+          lastRetriableInput = removedTurn.userInput;
+
+          const remainingTurns = turnHistory.length;
+          const turnLabel = remainingTurns === 1 ? "turn" : "turns";
+          console.log(
+            `Undid 1 turn. ${remainingTurns} ${turnLabel} remaining.`,
+          );
+          continue;
+        }
+
+        if (input === "/retry") {
+          const removedTurn = turnHistory.pop();
+          if (removedTurn) {
+            messages.length = removedTurn.startIndex;
+            lastRetriableInput = removedTurn.userInput;
+          }
+
+          if (!lastRetriableInput) {
+            console.log("Nothing to retry.");
+            continue;
+          }
+
+          console.log("Retrying last input...");
+          await runTurn(lastRetriableInput);
+          continue;
+        }
+
+        console.log("Unknown command. Type /help for commands.");
         continue;
       }
 
-      if (input === "/clear") {
-        messages.length = 0;
-        console.log("Cleared conversation history.");
-        continue;
-      }
-
-      messages.push({
-        role: "user",
-        content: input,
-      });
-
-      currentAbort = new AbortController();
-
-      try {
-        const result = await agent.stream({
-          messages,
-          abortSignal: currentAbort.signal,
-          onStepFinish: ({ finishReason, toolCalls }) => {
-            process.stderr.write(
-              `\n[step] finish=${finishReason} toolCalls=${toolCalls.length}\n`,
-            );
-          },
-        });
-
-        process.stdout.write("assistant> ");
-        for await (const delta of result.textStream) {
-          process.stdout.write(delta);
-        }
-        process.stdout.write("\n");
-
-        const response = await result.response;
-        messages.push(...response.messages);
-      } catch (error) {
-        if (currentAbort?.signal.aborted) {
-          process.stderr.write("Response aborted.\n");
-        } else {
-          const message =
-            error instanceof Error ? error.message : "Unknown chat error.";
-          process.stderr.write(`Chat error: ${message}\n`);
-        }
-      } finally {
-        currentAbort = null;
-      }
+      await runTurn(input);
     }
   } finally {
     process.off("SIGINT", handleSigint);

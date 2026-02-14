@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
 import { CommanderError } from "commander";
-import { buildProgram } from "./cli/program.js";
+import { buildProgram } from "./cli/program";
 
 const args = process.argv.slice(2);
 

@@ -41,6 +41,7 @@ Optional from repo root:
 - Use `commander` for command routing, options, help/version output, and parse errors.
 - Keep `src/index.ts` minimal; place command behavior in `src/commands` and runtime logic in focused modules.
 - Define chat tools in separate files under `src/chat/tools` and re-export them from `src/chat/tools/index.ts`.
+- Keep `chat` output clean by default; reserve step/tool telemetry for explicit verbose mode (`--verbose` or `/verbose on`).
 - When changing behavior, update `README.md` and this file's behavior contract in the same change.
 
 ## Validation Checklist

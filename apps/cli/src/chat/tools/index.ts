@@ -1,5 +1,5 @@
-import { calculate } from "./calculate.js";
-import { getCurrentDateTime } from "./getCurrentDateTime.js";
+import { calculate } from "./calculate";
+import { getCurrentDateTime } from "./getCurrentDateTime";
 
 export const tools = {
   getCurrentDateTime,
