@@ -15,6 +15,14 @@ Bun-native CLI app.
 
 ## Usage
 
+From repo root:
+
+- `bun run cli` (no args prints "cli is ready")
+- `bun run cli --help`
+- `bun run cli chat`
+
+From `apps/cli`:
+
 - `bun run src/index.ts`
 - `bun run src/index.ts --help`
 - `bun run src/index.ts --version`
@@ -30,6 +38,12 @@ After linking/installing the package bin:
 ## Chat
 
 Start an interactive chat session:
+
+From repo root (preserves stdin/TTY for REPL input):
+
+- `bun run cli chat`
+
+From `apps/cli`:
 
 - `bun run src/index.ts chat`
 - `cli chat`

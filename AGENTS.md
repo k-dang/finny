@@ -23,7 +23,7 @@ Run commands from the repo root unless noted.
 - `bun run check-types`: Run TypeScript checks across workspaces.
 - `bun run format`: Format `ts`, `tsx`, and `md` via Prettier.
 - `bun run web`: Start only the web app.
-- `bun run cli`: Run the CLI app.
+- `bun run cli`: Run the CLI app. For interactive chat (`bun run cli chat`), use this root command so stdin/TTY is preserved; avoid turbo-based wrappers for REPL input.
 
 ## Coding Style & Naming Conventions
 
