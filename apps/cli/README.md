@@ -21,6 +21,7 @@ From repo root:
 - `bun run cli --help`
 - `bun run cli chat`
 - `bun run cli chat --verbose`
+- `bun run cli chat --smoke`
 
 From `apps/cli`:
 
@@ -48,8 +49,17 @@ From `apps/cli`:
 
 - `bun run src/index.ts chat`
 - `bun run src/index.ts chat --verbose`
+- `bun run src/index.ts chat --smoke`
 - `cli chat`
 - `cli chat --verbose`
+- `cli chat --smoke`
+
+Quick validation (real one-turn model ping):
+
+- `bun run cli chat --smoke`
+
+`--smoke` performs a real network call to the configured model and consumes
+tokens. It exits immediately with pass/fail output.
 
 REPL commands:
 
