@@ -6,7 +6,7 @@ import { buildProgram } from "./program";
 const args = process.argv.slice(2);
 
 if (args.length === 0) {
-  console.log("cli is ready");
+  console.log("finny is ready");
   process.exit(0);
 }
 

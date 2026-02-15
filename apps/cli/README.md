@@ -1,6 +1,6 @@
 # cli
 
-Bun-native CLI app.
+Finny is a Bun-native finance-focused CLI app.
 
 ## Requirements
 
@@ -17,7 +17,7 @@ Bun-native CLI app.
 
 From repo root:
 
-- `bun run cli` (no args prints "cli is ready")
+- `bun run cli` (no args prints "finny is ready")
 - `bun run cli --help`
 - `bun run cli chat`
 - `bun run cli chat --verbose`
@@ -77,5 +77,5 @@ to show step and tool traces.
 
 ## Parsing behavior
 
-- `cli` with no arguments prints `cli is ready`.
+- `cli` with no arguments prints `finny is ready`.
 - Unknown commands/options fail with a non-zero exit and help output.

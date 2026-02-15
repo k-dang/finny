@@ -45,6 +45,12 @@ Optional from repo root:
 - In TTY mode, keep REPL role prompts visually distinct (`user>` vs `assistant>`); keep non-TTY output plain text.
 - When changing behavior, update `README.md` and this file's behavior contract in the same change.
 
+## Behavior Contract
+
+- The CLI is finance-focused and optimizes for stock/options decision support.
+- Running `cli` with no arguments prints `finny is ready`.
+- `chat` remains analysis-oriented by default and does not execute broker orders.
+
 ## Validation Checklist
 
 For every CLI change, run:

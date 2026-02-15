@@ -13,7 +13,7 @@ export function buildProgram(): Command {
 
   program
     .name("cli")
-    .description("Bun-native CLI app.")
+    .description("Finny: finance-focused trading and portfolio copilot.")
     .helpOption("-h, --help", "Show help")
     .version(resolveVersion(), "-v, --version", "Show version")
     .showSuggestionAfterError()
