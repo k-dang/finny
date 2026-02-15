@@ -1,7 +1,9 @@
 import { gateway, stepCountIs, ToolLoopAgent } from "ai";
-import { tools } from "./tools";
+import { getBashToolkit } from "./tools/bash";
 
-export function createAgent() {
+export async function createAgent() {
+  const toolkit = await getBashToolkit();
+
   return new ToolLoopAgent({
     model: gateway("anthropic/claude-sonnet-4.5"),
     instructions: `You are Finny, a finance-focused CLI agent.
@@ -15,6 +17,8 @@ How you respond:
 - Prefer scenario-based reasoning over predictions.
 - End recommendations with a clear action and key caveats.
 - If market data is missing, state assumptions explicitly.
+- If a shell command helps answer the user, use the bash tool.
+- Before running non-trivial commands, briefly state intent and favor read-only inspection first.
 
 Safety:
 - Provide educational analysis, not fiduciary financial advice.
@@ -22,6 +26,8 @@ Safety:
 - Highlight material risks before upside.
 `,
     stopWhen: stepCountIs(8),
-    tools,
+    tools: {
+      bash: toolkit.tools.bash,
+    },
   });
 }

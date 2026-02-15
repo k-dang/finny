@@ -52,7 +52,7 @@ export async function runChatSmoke(
   }, timeoutMs);
 
   try {
-    const agent = createAgent();
+    const agent = await createAgent();
     const result = await agent.stream({
       messages: [{ role: "user", content: "Reply with exactly: pong" }],
       abortSignal: abortController.signal,
@@ -87,7 +87,7 @@ export async function runChat(options: RunChatOptions = {}): Promise<void> {
   ensureGatewayApiKey();
 
   let verbose = options.verbose ?? false;
-  const agent = createAgent();
+  const agent = await createAgent();
   const eventRenderer = createEventRenderer();
   const messages: ModelMessage[] = [];
   const turnHistory: CompletedTurn[] = [];
