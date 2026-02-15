@@ -80,15 +80,18 @@ export async function runChat(options: RunChatOptions = {}): Promise<void> {
     let assistantStarted = false;
     let sawAbortEvent = false;
     let thinkingShownInTTY = false;
+    let stdoutHasOpenLine = false;
 
     const showThinking = () => {
       if (process.stdout.isTTY) {
         process.stdout.write("assistant> thinking...");
         thinkingShownInTTY = true;
+        stdoutHasOpenLine = true;
         return;
       }
 
       process.stdout.write("assistant> thinking...\n");
+      stdoutHasOpenLine = false;
     };
 
     const clearThinking = () => {
@@ -97,6 +100,16 @@ export async function runChat(options: RunChatOptions = {}): Promise<void> {
       }
 
       process.stdout.write("\r\u001b[2K");
+      thinkingShownInTTY = false;
+      stdoutHasOpenLine = false;
+    };
+
+    const ensureTraceStartsOnNewLine = () => {
+      if (stdoutHasOpenLine) {
+        process.stdout.write("\n");
+        stdoutHasOpenLine = false;
+      }
+
       thinkingShownInTTY = false;
     };
 
@@ -111,6 +124,7 @@ export async function runChat(options: RunChatOptions = {}): Promise<void> {
             return;
           }
 
+          ensureTraceStartsOnNewLine();
           summaryStepNumber += 1;
           eventRenderer.renderStepSummary({
             stepNumber: summaryStepNumber,
@@ -125,6 +139,7 @@ export async function runChat(options: RunChatOptions = {}): Promise<void> {
         switch (part.type) {
           case "start-step": {
             if (verbose) {
+              ensureTraceStartsOnNewLine();
               streamStepNumber += 1;
               eventRenderer.renderStepStart({ stepNumber: streamStepNumber });
             }
@@ -132,6 +147,7 @@ export async function runChat(options: RunChatOptions = {}): Promise<void> {
           }
           case "finish-step": {
             if (verbose) {
+              ensureTraceStartsOnNewLine();
               const stepNumber = streamStepNumber === 0 ? 1 : streamStepNumber;
               eventRenderer.renderStepFinish({
                 stepNumber,
@@ -142,6 +158,7 @@ export async function runChat(options: RunChatOptions = {}): Promise<void> {
           }
           case "tool-call": {
             if (verbose) {
+              ensureTraceStartsOnNewLine();
               const stepNumber = streamStepNumber === 0 ? 1 : streamStepNumber;
               eventRenderer.renderToolCall({
                 stepNumber,
@@ -154,6 +171,7 @@ export async function runChat(options: RunChatOptions = {}): Promise<void> {
           }
           case "tool-result": {
             if (verbose) {
+              ensureTraceStartsOnNewLine();
               const stepNumber = streamStepNumber === 0 ? 1 : streamStepNumber;
               eventRenderer.renderToolResult({
                 stepNumber,
@@ -166,6 +184,7 @@ export async function runChat(options: RunChatOptions = {}): Promise<void> {
           }
           case "tool-error": {
             if (verbose) {
+              ensureTraceStartsOnNewLine();
               const stepNumber = streamStepNumber === 0 ? 1 : streamStepNumber;
               eventRenderer.renderToolError({
                 stepNumber,
@@ -178,12 +197,14 @@ export async function runChat(options: RunChatOptions = {}): Promise<void> {
           }
           case "abort": {
             clearThinking();
+            ensureTraceStartsOnNewLine();
             sawAbortEvent = true;
             eventRenderer.renderAbort(part.reason);
             break;
           }
           case "error": {
             clearThinking();
+            ensureTraceStartsOnNewLine();
             eventRenderer.renderStreamError(part.error);
             break;
           }
@@ -192,9 +213,11 @@ export async function runChat(options: RunChatOptions = {}): Promise<void> {
               clearThinking();
               process.stdout.write("assistant> ");
               assistantStarted = true;
+              stdoutHasOpenLine = true;
             }
 
             process.stdout.write(part.text);
+            stdoutHasOpenLine = !part.text.endsWith("\n");
             break;
           }
           default: {
@@ -207,6 +230,7 @@ export async function runChat(options: RunChatOptions = {}): Promise<void> {
 
       if (assistantStarted) {
         process.stdout.write("\n");
+        stdoutHasOpenLine = false;
       }
 
       const response = await result.response;
@@ -217,17 +241,20 @@ export async function runChat(options: RunChatOptions = {}): Promise<void> {
 
       if (assistantStarted) {
         process.stdout.write("\n");
+        stdoutHasOpenLine = false;
       }
 
       messages.length = turnStartIndex;
 
       if (turnAbort.signal.aborted) {
         if (!sawAbortEvent) {
+          ensureTraceStartsOnNewLine();
           eventRenderer.renderAbort("Interrupted by user.");
         }
       } else {
         const message =
           error instanceof Error ? error.message : "Unknown chat error.";
+        ensureTraceStartsOnNewLine();
         eventRenderer.renderChatError(message);
       }
     } finally {
