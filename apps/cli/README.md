@@ -5,6 +5,7 @@ Finny is a Bun-native finance-focused CLI app.
 ## Requirements
 
 - `AI_GATEWAY_API_KEY` must be set for `chat`.
+- `ALPACA_API_KEY` and `ALPACA_API_SECRET` must be set for `alpaca`.
 
 ## Commands
 
@@ -22,6 +23,8 @@ From repo root:
 - `bun run cli chat`
 - `bun run cli chat --verbose`
 - `bun run cli chat --smoke`
+- `bun run cli alpaca price AAPL`
+- `bun run cli alpaca options AAPL --limit 10`
 
 From `apps/cli`:
 
@@ -30,6 +33,8 @@ From `apps/cli`:
 - `bun run src/index.ts --version`
 - `bun run src/index.ts chat`
 - `bun run src/index.ts bad-command` (fails with strict parse error)
+- `bun run src/index.ts alpaca price AAPL,TSLA`
+- `bun run src/index.ts alpaca options AAPL --type call`
 
 After linking/installing the package bin:
 
@@ -53,6 +58,17 @@ From `apps/cli`:
 - `cli chat`
 - `cli chat --verbose`
 - `cli chat --smoke`
+
+## Alpaca quick checks
+
+Quick market data checks from the CLI:
+
+- `bun run cli alpaca price AAPL`
+- `bun run cli alpaca price --symbols AAPL,TSLA,GOOGL`
+- `bun run cli alpaca price AAPL TSLA --minimal`
+- `bun run cli alpaca options AAPL`
+- `bun run cli alpaca options AAPL --expiration 2026-01-16 --type call --limit 25`
+- `bun run cli alpaca options AAPL --minimal`
 
 Quick validation (real one-turn model ping):
 

@@ -53,6 +53,12 @@
     "packages/alpaca": {
       "name": "@repo/alpaca",
       "version": "0.0.0",
+      "devDependencies": {
+        "@repo/eslint-config": "*",
+        "@repo/typescript-config": "*",
+        "eslint": "^9.39.1",
+        "typescript": "5.9.2",
+      },
     },
     "packages/eslint-config": {
       "name": "@repo/eslint-config",

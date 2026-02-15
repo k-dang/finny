@@ -46,6 +46,7 @@ Optional from repo root:
 - Running `cli` with no arguments prints `finny is ready`.
 - `chat` remains analysis-oriented by default and does not execute broker orders.
 - `chat` may run local shell commands through the bash tool when needed.
+- `alpaca` provides read-only Alpaca market data checks for quick local testing.
 
 ## Validation Checklist
 
@@ -55,3 +56,4 @@ For every CLI change, run:
 2. `bun run check-types`
 3. `bun run src/index.ts chat --smoke` (real one-turn model ping)
 4. `bun run src/index.ts --help`
+5. `bun run src/index.ts alpaca price AAPL --minimal` (requires Alpaca credentials)

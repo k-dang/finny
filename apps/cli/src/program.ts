@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Command } from "commander";
+import { registerAlpacaCommand } from "./commands/alpaca";
 import { registerChatCommand } from "./commands/chat";
 
 type PackageJson = {
@@ -21,6 +22,7 @@ export function buildProgram(): Command {
     .exitOverride();
 
   registerChatCommand(program);
+  registerAlpacaCommand(program);
 
   return program;
 }

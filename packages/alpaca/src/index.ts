@@ -1,3 +1,10 @@
-export function getMockAlpacaStatus(): string {
-  return "alpaca mock: ok";
-}
+export type {
+  AlpacaCredentials,
+  NormalizedOption,
+  NormalizedPrice,
+  OptionType,
+} from "./types";
+
+export { getLatestPrices } from "./stocks";
+
+export { getOptionChain } from "./options";
