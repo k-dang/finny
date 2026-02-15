@@ -42,6 +42,7 @@ Optional from repo root:
 - Keep `src/index.ts` minimal; place command behavior in `src/commands` and runtime logic in focused modules.
 - Define chat tools in separate files under `src/chat/tools` and re-export them from `src/chat/tools/index.ts`.
 - Keep `chat` output clean by default; reserve step/tool telemetry for explicit verbose mode (`--verbose` or `/verbose on`).
+- In TTY mode, keep REPL role prompts visually distinct (`user>` vs `assistant>`); keep non-TTY output plain text.
 - When changing behavior, update `README.md` and this file's behavior contract in the same change.
 
 ## Validation Checklist
@@ -50,5 +51,5 @@ For every CLI change, run:
 
 1. `bun run lint`
 2. `bun run check-types`
-3. `bun run dev --filter=cli`
-4. `bun run dev --filter=cli -- --help`
+3. `bun run src/index.ts chat --smoke` (real one-turn model ping)
+4. `bun run src/index.ts --help`

@@ -17,6 +17,20 @@ type CompletedTurn = {
 };
 
 const DEFAULT_SMOKE_TIMEOUT_MS = 20_000;
+const ANSI_RESET = "\u001b[0m";
+const ANSI_ROLE_COLORS = {
+  user: "\u001b[36m",
+  assistant: "\u001b[32m",
+} as const;
+
+function rolePrompt(role: keyof typeof ANSI_ROLE_COLORS): string {
+  const label = `${role}>`;
+  if (!process.stdout.isTTY) {
+    return label;
+  }
+
+  return `${ANSI_ROLE_COLORS[role]}${label}${ANSI_RESET}`;
+}
 
 function ensureGatewayApiKey(): void {
   if (!process.env.AI_GATEWAY_API_KEY) {
@@ -87,6 +101,8 @@ export async function runChat(options: RunChatOptions = {}): Promise<void> {
   let lastRetriableInput: string | null = null;
   let awaitingInput = false;
   let sigintCount = 0;
+  const userPrompt = rolePrompt("user");
+  const assistantPrompt = rolePrompt("assistant");
 
   const handleSigint = () => {
     if (currentAbort) {
@@ -137,13 +153,13 @@ export async function runChat(options: RunChatOptions = {}): Promise<void> {
 
     const showThinking = () => {
       if (process.stdout.isTTY) {
-        process.stdout.write("assistant> thinking...");
+        process.stdout.write(`${assistantPrompt} thinking...`);
         thinkingShownInTTY = true;
         stdoutHasOpenLine = true;
         return;
       }
 
-      process.stdout.write("assistant> thinking...\n");
+      process.stdout.write(`${assistantPrompt} thinking...\n`);
       stdoutHasOpenLine = false;
     };
 
@@ -264,7 +280,7 @@ export async function runChat(options: RunChatOptions = {}): Promise<void> {
           case "text-delta": {
             if (!assistantStarted) {
               clearThinking();
-              process.stdout.write("assistant> ");
+              process.stdout.write(`${assistantPrompt} `);
               assistantStarted = true;
               stdoutHasOpenLine = true;
             }
@@ -324,7 +340,7 @@ export async function runChat(options: RunChatOptions = {}): Promise<void> {
   try {
     while (true) {
       awaitingInput = true;
-      const input = (await rl.question("you> ")).trim();
+      const input = (await rl.question(`${userPrompt} `)).trim();
       awaitingInput = false;
       sigintCount = 0;
 
