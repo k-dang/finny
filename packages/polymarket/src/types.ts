@@ -1,11 +1,5 @@
 export type FetchLike = typeof fetch;
 
-export type PolymarketClientOptions = {
-  gammaBaseUrl?: string;
-  clobBaseUrl?: string;
-  fetchFn?: FetchLike;
-};
-
 export type ListMarketsParams = {
   limit?: number;
   offset?: number;
@@ -68,10 +62,4 @@ export type PolymarketOrderbookSummary = {
   minOrderSize: number | null;
   tickSize: number | null;
   negRisk: boolean;
-};
-
-export type PolymarketClient = {
-  listMarkets: (params?: ListMarketsParams) => Promise<PolymarketMarket[]>;
-  getEventBySlug: (slug: string) => Promise<PolymarketEvent>;
-  getOrderbookSummary: (tokenId: string) => Promise<PolymarketOrderbookSummary>;
 };

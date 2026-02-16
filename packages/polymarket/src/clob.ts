@@ -7,30 +7,26 @@ import {
   PolymarketApiError,
   requestPolymarketJson,
 } from "./http";
-import { DEFAULT_CLOB_BASE_URL } from "./constants";
 import type {
   FetchLike,
   PolymarketOrderLevel,
   PolymarketOrderbookSummary,
 } from "./types";
 
+const DEFAULT_CLOB_BASE_URL = "https://clob.polymarket.com";
+
 export async function getOrderbookSummary(options: {
   tokenId: string;
-  clobBaseUrl?: string;
   fetchFn?: FetchLike;
 }): Promise<PolymarketOrderbookSummary> {
-  const {
-    tokenId,
-    clobBaseUrl = DEFAULT_CLOB_BASE_URL,
-    fetchFn = fetch,
-  } = options;
+  const { tokenId, fetchFn = fetch } = options;
 
   const normalizedTokenId = tokenId.trim();
   if (!normalizedTokenId) {
     throw new PolymarketApiError("tokenId is required.");
   }
 
-  const url = buildUrl(clobBaseUrl, "/book", {
+  const url = buildUrl(DEFAULT_CLOB_BASE_URL, "/book", {
     token_id: normalizedTokenId,
   });
 

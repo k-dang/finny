@@ -7,13 +7,14 @@ import {
   PolymarketApiError,
   requestPolymarketJson,
 } from "./http";
-import { DEFAULT_GAMMA_BASE_URL } from "./constants";
 import type {
   FetchLike,
   ListMarketsParams,
   PolymarketEvent,
   PolymarketMarket,
 } from "./types";
+
+const DEFAULT_GAMMA_BASE_URL = "https://gamma-api.polymarket.com";
 
 type GammaMarketWire = Record<string, unknown>;
 type GammaEventWire = Record<string, unknown>;
@@ -61,16 +62,11 @@ function parseJsonNumberArray(value: unknown): number[] {
 
 export async function listMarkets(options: {
   params?: ListMarketsParams;
-  gammaBaseUrl?: string;
   fetchFn?: FetchLike;
 }): Promise<PolymarketMarket[]> {
-  const {
-    params,
-    gammaBaseUrl = DEFAULT_GAMMA_BASE_URL,
-    fetchFn = fetch,
-  } = options;
+  const { params, fetchFn = fetch } = options;
 
-  const url = buildUrl(gammaBaseUrl, "/markets", {
+  const url = buildUrl(DEFAULT_GAMMA_BASE_URL, "/markets", {
     limit: params?.limit,
     offset: params?.offset,
     order: params?.order,
@@ -90,19 +86,14 @@ export async function listMarkets(options: {
 
 export async function getEventBySlug(options: {
   slug: string;
-  gammaBaseUrl?: string;
   fetchFn?: FetchLike;
 }): Promise<PolymarketEvent> {
-  const {
-    slug,
-    gammaBaseUrl = DEFAULT_GAMMA_BASE_URL,
-    fetchFn = fetch,
-  } = options;
+  const { slug, fetchFn = fetch } = options;
 
   const normalizedSlug = requireTrimmed(slug, "slug");
 
   const url = buildUrl(
-    gammaBaseUrl,
+    DEFAULT_GAMMA_BASE_URL,
     `/events/slug/${encodeURIComponent(normalizedSlug)}`,
   );
   const payload = await requestPolymarketJson<unknown>({ fetchFn, url });
