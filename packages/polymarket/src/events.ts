@@ -1,5 +1,5 @@
-import { listEvents } from "../gamma";
-import type { PolymarketEvent } from "../types";
+import { listEvents } from "./gamma";
+import type { PolymarketEvent } from "./types";
 
 export const DEFAULT_EVENTS_LIMIT = 20;
 export const MAX_EVENTS_LIMIT = 100;

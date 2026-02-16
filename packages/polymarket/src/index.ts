@@ -2,11 +2,11 @@ export {
   DEFAULT_EVENTS_LIMIT,
   MAX_EVENTS_LIMIT,
   listPolymarketActiveEvents,
-} from "./usecases/events";
+} from "./events";
 export {
   DEFAULT_MARKETS_LIMIT,
   MAX_MARKETS_LIMIT,
   listPolymarketMarkets,
-} from "./usecases/markets";
-export type * from "./usecases/events";
-export type * from "./usecases/markets";
+} from "./markets";
+export type * from "./events";
+export type * from "./markets";

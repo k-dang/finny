@@ -1,5 +1,5 @@
-import { listMarkets } from "../gamma";
-import type { PolymarketMarket } from "../types";
+import { listMarkets } from "./gamma";
+import type { PolymarketMarket } from "./types";
 
 export const DEFAULT_MARKETS_LIMIT = 20;
 export const MAX_MARKETS_LIMIT = 100;
