@@ -1,17 +1,14 @@
-export type IbkrConnectionMode = "paper" | "live";
-
-export type IbkrProfile = {
-  broker: "ibkr";
-  mode: IbkrConnectionMode;
-  ready: boolean;
-};
-
-export function getIbkrProfile(
-  mode: IbkrConnectionMode = "paper",
-): IbkrProfile {
-  return {
-    broker: "ibkr",
-    mode,
-    ready: false,
-  };
-}
+export {
+  createIbkrClient,
+  extractAccounts,
+  IbkrClientError,
+  isAuthenticatedPayload,
+  normalizeAccounts,
+} from "./client";
+export type {
+  IbkrClient,
+  IbkrContractSearchQuery,
+  IbkrOrderQuery,
+  IbkrRequestOptions,
+  IbkrTransactionQuery,
+} from "./types";
