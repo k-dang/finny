@@ -1,4 +1,5 @@
 import { gateway, stepCountIs, ToolLoopAgent } from "ai";
+import { alpacaTools } from "./tools/alpaca";
 import { getBashToolkit } from "./tools/bash";
 
 export async function createAgent() {
@@ -17,7 +18,8 @@ How you respond:
 - Prefer scenario-based reasoning over predictions.
 - End recommendations with a clear action and key caveats.
 - If market data is missing, state assumptions explicitly.
-- If a shell command helps answer the user, use the bash tool.
+- For stock quotes and option chains, use alpaca_price and alpaca_options.
+- If you need local machine context, use the bash tool.
 - Before running non-trivial commands, briefly state intent and favor read-only inspection first.
 
 Safety:
@@ -28,6 +30,7 @@ Safety:
     stopWhen: stepCountIs(8),
     tools: {
       bash: toolkit.tools.bash,
+      ...alpacaTools,
     },
   });
 }

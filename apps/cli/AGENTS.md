@@ -46,6 +46,7 @@ Optional from repo root:
 - Running `cli` with no arguments prints `finny is ready`.
 - `chat` remains analysis-oriented by default and does not execute broker orders.
 - `chat` may run local shell commands through the bash tool when needed.
+- `chat` may fetch read-only Alpaca market data via `alpaca_price` and `alpaca_options`.
 - `alpaca` provides read-only Alpaca market data checks for quick local testing.
 
 ## Validation Checklist

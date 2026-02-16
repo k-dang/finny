@@ -5,7 +5,7 @@ Finny is a Bun-native finance-focused CLI app.
 ## Requirements
 
 - `AI_GATEWAY_API_KEY` must be set for `chat`.
-- `ALPACA_API_KEY` and `ALPACA_API_SECRET` must be set for `alpaca`.
+- `ALPACA_API_KEY` and `ALPACA_API_SECRET` must be set for `alpaca` and Alpaca-backed chat tools.
 
 ## Commands
 
@@ -90,6 +90,12 @@ REPL commands:
 
 By default, chat runs in a clean output mode. Use `--verbose` or `/verbose on`
 to show step and tool traces.
+
+Chat has access to:
+
+- `bash` for local shell inspection when needed
+- `alpaca_price` for latest stock prices
+- `alpaca_options` for option chain snapshots
 
 ## Parsing behavior
 
