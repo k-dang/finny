@@ -4,25 +4,13 @@ import {
   type AlpacaCredentials,
   type NormalizedOption,
   type NormalizedPrice,
-  type OptionType,
 } from "@repo/alpaca";
-import { jsonSchema, tool } from "ai";
+import { tool } from "ai";
+import { z } from "zod";
 
 const MAX_SYMBOLS = 25;
 const DEFAULT_OPTIONS_LIMIT = 100;
 const MAX_OPTIONS_LIMIT = 200;
-
-type AlpacaPriceToolInput = {
-  symbols: string[];
-  feed?: string;
-};
-
-type AlpacaOptionsToolInput = {
-  symbol: string;
-  expiration?: string;
-  type?: OptionType;
-  limit?: number;
-};
 
 type AlpacaToolError = {
   ok: false;
@@ -68,58 +56,82 @@ function normalizeSymbols(symbols: string[]): string[] {
   return Array.from(new Set(normalized));
 }
 
-function isIsoDate(value: string): boolean {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value);
-}
+const alpacaPriceInputSchema = z
+  .object({
+    symbols: z
+      .array(z.string().describe("Stock ticker symbol such as AAPL or TSLA."))
+      .describe("List of stock ticker symbols (max 25 unique values).")
+      .transform(normalizeSymbols)
+      .superRefine((symbols, ctx) => {
+        if (symbols.length === 0) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Provide at least one valid symbol.",
+          });
+        }
+
+        if (symbols.length > MAX_SYMBOLS) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Too many symbols. Maximum is ${MAX_SYMBOLS}.`,
+          });
+        }
+      }),
+    feed: z
+      .string()
+      .optional()
+      .describe(
+        "Optional Alpaca feed name. Use iex by default unless a different feed is required.",
+      ),
+  })
+  .strict();
+
+const alpacaOptionsInputSchema = z
+  .object({
+    symbol: z
+      .string()
+      .describe("Underlying stock ticker symbol such as AAPL.")
+      .transform(normalizeSymbol)
+      .refine(Boolean, {
+        message: "Provide a valid underlying symbol.",
+      }),
+    expiration: z
+      .string()
+      .optional()
+      .describe("Optional expiration date filter in YYYY-MM-DD format.")
+      .refine(
+        (value) => value === undefined || /^\d{4}-\d{2}-\d{2}$/.test(value),
+        {
+          message: "expiration must use YYYY-MM-DD format.",
+        },
+      ),
+    type: z
+      .enum(["call", "put"])
+      .optional()
+      .describe("Optional option type filter."),
+    limit: z
+      .number()
+      .int()
+      .min(1)
+      .max(MAX_OPTIONS_LIMIT)
+      .optional()
+      .describe("Maximum number of contracts to return (1-200)."),
+  })
+  .strict();
 
 export const alpacaTools = {
   alpaca_price: tool({
     description:
       "Get latest read-only stock prices from Alpaca for one or more ticker symbols.",
-    inputSchema: jsonSchema<AlpacaPriceToolInput>({
-      type: "object",
-      properties: {
-        symbols: {
-          type: "array",
-          description:
-            "List of stock ticker symbols such as AAPL or TSLA (max 25).",
-          minItems: 1,
-          maxItems: MAX_SYMBOLS,
-          items: { type: "string" },
-        },
-        feed: {
-          type: "string",
-          description:
-            "Optional Alpaca feed name. Use iex by default unless a different feed is required.",
-        },
-      },
-      required: ["symbols"],
-      additionalProperties: false,
-    }),
+    inputSchema: alpacaPriceInputSchema,
     execute: async ({
       symbols,
       feed,
     }): Promise<AlpacaPriceToolSuccess | AlpacaToolError> => {
       try {
-        const normalizedSymbols = normalizeSymbols(symbols);
-
-        if (normalizedSymbols.length === 0) {
-          return {
-            ok: false,
-            error: "Provide at least one valid symbol.",
-          };
-        }
-
-        if (normalizedSymbols.length > MAX_SYMBOLS) {
-          return {
-            ok: false,
-            error: `Too many symbols. Maximum is ${MAX_SYMBOLS}.`,
-          };
-        }
-
         const credentials = getCredentials();
         const normalized = await getLatestPrices({
-          symbols: normalizedSymbols,
+          symbols,
           feed,
           credentials,
         });
@@ -127,7 +139,7 @@ export const alpacaTools = {
         const prices: Record<string, NormalizedPrice | null> = {};
         const warnings: string[] = [];
 
-        for (const symbol of normalizedSymbols) {
+        for (const symbol of symbols) {
           if (normalized[symbol]) {
             prices[symbol] = normalized[symbol];
           } else {
@@ -138,7 +150,7 @@ export const alpacaTools = {
 
         return {
           ok: true,
-          symbols: normalizedSymbols,
+          symbols,
           prices,
           warnings,
         };
@@ -154,32 +166,7 @@ export const alpacaTools = {
   alpaca_options: tool({
     description:
       "Get a read-only Alpaca option chain snapshot for one underlying symbol.",
-    inputSchema: jsonSchema<AlpacaOptionsToolInput>({
-      type: "object",
-      properties: {
-        symbol: {
-          type: "string",
-          description: "Underlying stock ticker symbol such as AAPL.",
-        },
-        expiration: {
-          type: "string",
-          description: "Optional expiration date filter in YYYY-MM-DD format.",
-        },
-        type: {
-          type: "string",
-          enum: ["call", "put"],
-          description: "Optional option type filter.",
-        },
-        limit: {
-          type: "integer",
-          minimum: 1,
-          maximum: MAX_OPTIONS_LIMIT,
-          description: "Maximum number of contracts to return (1-200).",
-        },
-      },
-      required: ["symbol"],
-      additionalProperties: false,
-    }),
+    inputSchema: alpacaOptionsInputSchema,
     execute: async ({
       symbol,
       expiration,
@@ -187,24 +174,9 @@ export const alpacaTools = {
       limit,
     }): Promise<AlpacaOptionsToolSuccess | AlpacaToolError> => {
       try {
-        const underlying = normalizeSymbol(symbol);
-        if (!underlying) {
-          return {
-            ok: false,
-            error: "Provide a valid underlying symbol.",
-          };
-        }
-
-        if (expiration && !isIsoDate(expiration)) {
-          return {
-            ok: false,
-            error: "expiration must use YYYY-MM-DD format.",
-          };
-        }
-
         const credentials = getCredentials();
         const contracts = await getOptionChain({
-          underlying,
+          underlying: symbol,
           expiration,
           type,
           limit: limit ?? DEFAULT_OPTIONS_LIMIT,
@@ -213,7 +185,7 @@ export const alpacaTools = {
 
         return {
           ok: true,
-          underlying,
+          underlying: symbol,
           contracts,
         };
       } catch (error) {

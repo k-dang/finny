@@ -9,18 +9,44 @@ import {
   DEFAULT_TIME_HORIZON_HOURS,
   scanPolymarketMispricing,
 } from "../../polymarket/scan";
-import { jsonSchema, tool } from "ai";
+import { tool } from "ai";
 import { z } from "zod";
 
 const TOOL_MAX_LIMIT = 30;
 
-type PolymarketMispricingScanInput = {
-  query?: string;
-  limit?: number;
-  minVolume?: number;
-  maxSpreadBps?: number;
-  timeHorizonHours?: number;
-};
+const polymarketMispricingScanInputSchema = z
+  .object({
+    query: z
+      .string()
+      .optional()
+      .describe(
+        "Optional search text matched against market question and slug.",
+      ),
+    limit: z
+      .number()
+      .int()
+      .min(1)
+      .max(TOOL_MAX_LIMIT)
+      .optional()
+      .describe("Maximum ranked opportunities to return (default 20, max 30)."),
+    minVolume: z
+      .number()
+      .min(0)
+      .optional()
+      .describe("Minimum 24h market volume used to filter candidates."),
+    maxSpreadBps: z
+      .number()
+      .min(1)
+      .optional()
+      .describe("Maximum allowed spread in bps for ranked signals."),
+    timeHorizonHours: z
+      .number()
+      .min(1)
+      .max(168)
+      .optional()
+      .describe("Horizon used by momentum dislocation scoring (1-168 hours)."),
+  })
+  .strict();
 
 const polymarketActiveEventsToolInputSchema =
   polymarketActiveEventsInputSchema.extend({
@@ -50,41 +76,7 @@ export const polymarketTools = {
   polymarket_mispricing_scan: tool({
     description:
       "Scan Polymarket markets for potentially mispriced YES/NO opportunities using read-only microstructure signals.",
-    inputSchema: jsonSchema<PolymarketMispricingScanInput>({
-      type: "object",
-      properties: {
-        query: {
-          type: "string",
-          description:
-            "Optional search text matched against market question and slug.",
-        },
-        limit: {
-          type: "integer",
-          minimum: 1,
-          maximum: TOOL_MAX_LIMIT,
-          description:
-            "Maximum ranked opportunities to return (default 20, max 30).",
-        },
-        minVolume: {
-          type: "number",
-          minimum: 0,
-          description: "Minimum 24h market volume used to filter candidates.",
-        },
-        maxSpreadBps: {
-          type: "number",
-          minimum: 1,
-          description: "Maximum allowed spread in bps for ranked signals.",
-        },
-        timeHorizonHours: {
-          type: "number",
-          minimum: 1,
-          maximum: 168,
-          description:
-            "Horizon used by momentum dislocation scoring (1-168 hours).",
-        },
-      },
-      additionalProperties: false,
-    }),
+    inputSchema: polymarketMispricingScanInputSchema,
     execute: async ({
       query,
       limit,
