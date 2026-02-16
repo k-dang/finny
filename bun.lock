@@ -89,6 +89,16 @@
         "typescript": "5.9.2",
       },
     },
+    "packages/polymarket": {
+      "name": "@repo/polymarket",
+      "version": "0.0.0",
+      "devDependencies": {
+        "@repo/eslint-config": "*",
+        "@repo/typescript-config": "*",
+        "eslint": "^9.39.1",
+        "typescript": "5.9.2",
+      },
+    },
     "packages/typescript-config": {
       "name": "@repo/typescript-config",
       "version": "0.0.0",
@@ -220,6 +230,8 @@
     "@repo/eslint-config": ["@repo/eslint-config@workspace:packages/eslint-config"],
 
     "@repo/ibkr": ["@repo/ibkr@workspace:packages/ibkr"],
+
+    "@repo/polymarket": ["@repo/polymarket@workspace:packages/polymarket"],
 
     "@repo/typescript-config": ["@repo/typescript-config@workspace:packages/typescript-config"],
 
