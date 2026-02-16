@@ -10,6 +10,17 @@ export type ListMarketsParams = {
   minLiquidity?: number;
 };
 
+export type ListEventsParams = {
+  limit?: number;
+  offset?: number;
+  order?: string;
+  ascending?: boolean;
+  active?: boolean;
+  closed?: boolean;
+  minVolume?: number;
+  minLiquidity?: number;
+};
+
 export type PolymarketMarket = {
   id: string;
   conditionId: string | null;

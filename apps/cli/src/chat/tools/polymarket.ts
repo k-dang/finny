@@ -1,10 +1,16 @@
 import {
+  DEFAULT_EVENTS_LIMIT,
+  listPolymarketActiveEvents,
+  polymarketActiveEventsInputSchema,
+} from "../../polymarket/events";
+import {
   DEFAULT_LIMIT,
   DEFAULT_MAX_SPREAD_BPS,
   DEFAULT_TIME_HORIZON_HOURS,
   scanPolymarketMispricing,
 } from "../../polymarket/scan";
 import { jsonSchema, tool } from "ai";
+import { z } from "zod";
 
 const TOOL_MAX_LIMIT = 30;
 
@@ -16,7 +22,31 @@ type PolymarketMispricingScanInput = {
   timeHorizonHours?: number;
 };
 
+const polymarketActiveEventsToolInputSchema =
+  polymarketActiveEventsInputSchema.extend({
+    limit: z.coerce
+      .number()
+      .int()
+      .positive()
+      .max(TOOL_MAX_LIMIT)
+      .default(DEFAULT_EVENTS_LIMIT),
+  });
+
 export const polymarketTools = {
+  polymarket_active_events: tool({
+    description:
+      "List current active Polymarket events (active=true and closed=false), with optional text and liquidity filters.",
+    inputSchema: polymarketActiveEventsToolInputSchema,
+    execute: async ({ query, limit, minVolume, minLiquidity }) => {
+      return listPolymarketActiveEvents({
+        query: query ?? undefined,
+        limit: limit ?? DEFAULT_EVENTS_LIMIT,
+        minVolume,
+        minLiquidity,
+      });
+    },
+  }),
+
   polymarket_mispricing_scan: tool({
     description:
       "Scan Polymarket markets for potentially mispriced YES/NO opportunities using read-only microstructure signals.",

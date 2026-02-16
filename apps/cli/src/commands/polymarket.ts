@@ -1,4 +1,8 @@
 import {
+  DEFAULT_EVENTS_LIMIT,
+  listPolymarketActiveEvents,
+} from "../polymarket/events";
+import {
   DEFAULT_CONCURRENCY,
   DEFAULT_LIMIT,
   DEFAULT_MAX_SPREAD_BPS,
@@ -18,10 +22,51 @@ type PolymarketScanOptions = {
   minimal?: boolean;
 };
 
+type PolymarketEventsOptions = {
+  query?: string;
+  limit?: number;
+  minVolume?: number;
+  minLiquidity?: number;
+  minimal?: boolean;
+};
+
 export function registerPolymarketCommand(program: Command): void {
   const polymarket = program
     .command("polymarket")
     .description("Polymarket market scanning and microstructure analysis");
+
+  polymarket
+    .command("events")
+    .description("List current active Polymarket events")
+    .option("--query <text>", "Filter events by title or slug text")
+    .option(
+      "--limit <number>",
+      "Max active events to return",
+      Number,
+      DEFAULT_EVENTS_LIMIT,
+    )
+    .option("--min-volume <number>", "Minimum event volume filter", Number, 0)
+    .option(
+      "--min-liquidity <number>",
+      "Minimum event liquidity filter",
+      Number,
+      0,
+    )
+    .option("--minimal", "Output minified JSON", false)
+    .action(async (options: PolymarketEventsOptions) => {
+      const result = await listPolymarketActiveEvents({
+        query: options.query,
+        limit: options.limit,
+        minVolume: options.minVolume,
+        minLiquidity: options.minLiquidity,
+      });
+
+      outputJson(result, options.minimal ?? false);
+
+      if (!result.ok) {
+        process.exit(1);
+      }
+    });
 
   polymarket
     .command("scan")

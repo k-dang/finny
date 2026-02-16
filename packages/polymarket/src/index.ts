@@ -1,5 +1,5 @@
 export { getOrderbookSummary } from "./clob";
-export { getEventBySlug, listMarkets } from "./gamma";
+export { getEventBySlug, listEvents, listMarkets } from "./gamma";
 export {
   rankMispricingSignals,
   scoreMispricingCandidate,

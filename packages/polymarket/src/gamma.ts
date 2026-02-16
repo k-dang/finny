@@ -9,6 +9,7 @@ import {
 } from "./http";
 import type {
   FetchLike,
+  ListEventsParams,
   ListMarketsParams,
   PolymarketEvent,
   PolymarketMarket,
@@ -82,6 +83,31 @@ export async function listMarkets(options: {
   }
 
   return payload.filter(isRecord).map(normalizeMarket);
+}
+
+export async function listEvents(options: {
+  params?: ListEventsParams;
+  fetchFn?: FetchLike;
+}): Promise<PolymarketEvent[]> {
+  const { params, fetchFn = fetch } = options;
+
+  const url = buildUrl(DEFAULT_GAMMA_BASE_URL, "/events", {
+    limit: params?.limit,
+    offset: params?.offset,
+    order: params?.order,
+    ascending: params?.ascending,
+    active: params?.active,
+    closed: params?.closed,
+    volume_num_min: params?.minVolume,
+    liquidity_num_min: params?.minLiquidity,
+  });
+
+  const payload = await requestPolymarketJson<unknown>({ fetchFn, url });
+  if (!Array.isArray(payload)) {
+    throw new PolymarketApiError("Unexpected events response format.");
+  }
+
+  return payload.filter(isRecord).map(normalizeEvent);
 }
 
 export async function getEventBySlug(options: {

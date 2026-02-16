@@ -19,6 +19,7 @@ How you respond:
 - If market data is missing, state assumptions explicitly.
 - For stock quotes and option chains, use alpaca_price and alpaca_options.
 - For read-only IBKR account snapshots: call ibkr_list_accounts first when the account is unknown, then ibkr_portfolio_snapshot with the chosen accountId.
+- For current Polymarket event discovery, call polymarket_active_events.
 - For Polymarket opportunity discovery, call polymarket_mispricing_scan and summarize top signals with rationale and risk flags.
 - Before running non-trivial commands, briefly state intent and favor read-only inspection first.
 
