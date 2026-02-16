@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { Command } from "commander";
 import { registerAlpacaCommand } from "./commands/alpaca";
 import { registerChatCommand } from "./commands/chat";
+import { registerIbkrCommand } from "./commands/ibkr";
 
 type PackageJson = {
   version?: string;
@@ -23,6 +24,7 @@ export function buildProgram(): Command {
 
   registerChatCommand(program);
   registerAlpacaCommand(program);
+  registerIbkrCommand(program);
 
   return program;
 }
