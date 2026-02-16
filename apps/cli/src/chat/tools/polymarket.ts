@@ -1,97 +1,104 @@
 import {
   DEFAULT_EVENTS_LIMIT,
+  DEFAULT_MARKETS_LIMIT,
   listPolymarketActiveEvents,
-  polymarketActiveEventsInputSchema,
-} from "../../polymarket/events";
-import {
-  DEFAULT_LIMIT,
-  DEFAULT_MAX_SPREAD_BPS,
-  DEFAULT_TIME_HORIZON_HOURS,
-  scanPolymarketMispricing,
-} from "../../polymarket/scan";
+  listPolymarketMarkets,
+  MAX_EVENTS_LIMIT,
+  MAX_MARKETS_LIMIT,
+} from "@repo/polymarket";
 import { tool } from "ai";
 import { z } from "zod";
 
-const TOOL_MAX_LIMIT = 30;
+const TOOL_MAX_EVENTS_LIMIT = Math.min(30, MAX_EVENTS_LIMIT);
+const TOOL_MAX_MARKETS_LIMIT = Math.min(50, MAX_MARKETS_LIMIT);
 
-const polymarketMispricingScanInputSchema = z
-  .object({
-    query: z
-      .string()
-      .optional()
-      .describe(
-        "Optional search text matched against market question and slug.",
-      ),
-    limit: z
-      .number()
-      .int()
-      .min(1)
-      .max(TOOL_MAX_LIMIT)
-      .optional()
-      .describe("Maximum ranked opportunities to return (default 20, max 30)."),
-    minVolume: z
-      .number()
-      .min(0)
-      .optional()
-      .describe("Minimum 24h market volume used to filter candidates."),
-    maxSpreadBps: z
-      .number()
-      .min(1)
-      .optional()
-      .describe("Maximum allowed spread in bps for ranked signals."),
-    timeHorizonHours: z
-      .number()
-      .min(1)
-      .max(168)
-      .optional()
-      .describe("Horizon used by momentum dislocation scoring (1-168 hours)."),
-  })
-  .strict();
+function createActiveEventsInputSchema(maxLimit: number) {
+  return z
+    .object({
+      query: z
+        .string()
+        .optional()
+        .describe("Optional text matched against event title and slug."),
+      limit: z.coerce
+        .number()
+        .int()
+        .positive()
+        .max(maxLimit)
+        .default(DEFAULT_EVENTS_LIMIT),
+      minVolume: z.coerce.number().nonnegative().default(0),
+      minLiquidity: z.coerce.number().nonnegative().default(0),
+    })
+    .strict();
+}
 
-const polymarketActiveEventsToolInputSchema =
-  polymarketActiveEventsInputSchema.extend({
-    limit: z.coerce
-      .number()
-      .int()
-      .positive()
-      .max(TOOL_MAX_LIMIT)
-      .default(DEFAULT_EVENTS_LIMIT),
-  });
+function createMarketsInputSchema(maxLimit: number) {
+  return z
+    .object({
+      query: z
+        .string()
+        .optional()
+        .describe(
+          "Optional search text matched against market question and slug.",
+        ),
+      limit: z.coerce
+        .number()
+        .int()
+        .positive()
+        .max(maxLimit)
+        .default(DEFAULT_MARKETS_LIMIT)
+        .describe("Maximum markets to return (tool max 50)."),
+      minVolume: z.coerce
+        .number()
+        .nonnegative()
+        .default(0)
+        .describe("Minimum 24h market volume filter."),
+      minLiquidity: z.coerce
+        .number()
+        .nonnegative()
+        .default(0)
+        .describe("Minimum market liquidity filter."),
+      activeOnly: z.coerce
+        .boolean()
+        .default(true)
+        .describe("If true, include only active and open markets."),
+      acceptingOrdersOnly: z.coerce
+        .boolean()
+        .default(true)
+        .describe("If true, include only markets currently accepting orders."),
+      requireTokenIds: z.coerce
+        .boolean()
+        .default(true)
+        .describe(
+          "If true, include only markets with at least one CLOB token id.",
+        ),
+    })
+    .strict();
+}
+
+const polymarketActiveEventsToolInputSchema = createActiveEventsInputSchema(
+  TOOL_MAX_EVENTS_LIMIT,
+);
+
+const polymarketMarketsToolInputSchema = createMarketsInputSchema(
+  TOOL_MAX_MARKETS_LIMIT,
+);
 
 export const polymarketTools = {
   polymarket_active_events: tool({
     description:
       "List current active Polymarket events (active=true and closed=false), with optional text and liquidity filters.",
     inputSchema: polymarketActiveEventsToolInputSchema,
-    execute: async ({ query, limit, minVolume, minLiquidity }) => {
-      return listPolymarketActiveEvents({
-        query: query ?? undefined,
-        limit: limit ?? DEFAULT_EVENTS_LIMIT,
-        minVolume,
-        minLiquidity,
-      });
+    execute: async (input) => {
+      return listPolymarketActiveEvents(input);
     },
   }),
 
-  polymarket_mispricing_scan: tool({
+  polymarket_markets: tool({
     description:
-      "Scan Polymarket markets for potentially mispriced YES/NO opportunities using read-only microstructure signals.",
-    inputSchema: polymarketMispricingScanInputSchema,
-    execute: async ({
-      query,
-      limit,
-      minVolume,
-      maxSpreadBps,
-      timeHorizonHours,
-    }) => {
-      return scanPolymarketMispricing({
-        query,
-        limit: limit ?? DEFAULT_LIMIT,
-        minVolume,
-        maxSpreadBps: maxSpreadBps ?? DEFAULT_MAX_SPREAD_BPS,
-        timeHorizonHours: timeHorizonHours ?? DEFAULT_TIME_HORIZON_HOURS,
-        includeTrace: false,
-      });
+      "List Polymarket markets with raw pricing and momentum fields used for microstructure analysis.",
+    inputSchema: polymarketMarketsToolInputSchema,
+    execute: async (input) => {
+      return listPolymarketMarkets(input);
     },
   }),
 };

@@ -1,36 +1,15 @@
-import { listEvents, type PolymarketEvent } from "@repo/polymarket";
-import { z } from "zod";
+import { listEvents } from "../gamma";
+import type { PolymarketEvent } from "../types";
 
 export const DEFAULT_EVENTS_LIMIT = 20;
 export const MAX_EVENTS_LIMIT = 100;
 
-export const polymarketActiveEventsInputSchema = z
-  .object({
-    query: z
-      .string()
-      .optional()
-      .transform((value) => {
-        if (!value) {
-          return null;
-        }
-
-        const normalized = value.trim().toLowerCase();
-        return normalized.length > 0 ? normalized : null;
-      }),
-    limit: z.coerce
-      .number()
-      .int()
-      .positive()
-      .max(MAX_EVENTS_LIMIT)
-      .default(DEFAULT_EVENTS_LIMIT),
-    minVolume: z.coerce.number().nonnegative().default(0),
-    minLiquidity: z.coerce.number().nonnegative().default(0),
-  })
-  .strict();
-
-export type PolymarketActiveEventsInput = z.input<
-  typeof polymarketActiveEventsInputSchema
->;
+export type PolymarketActiveEventsInput = {
+  query?: string;
+  limit?: number;
+  minVolume?: number;
+  minLiquidity?: number;
+};
 
 export type PolymarketActiveEvent = {
   id: string;
@@ -67,35 +46,17 @@ export type PolymarketActiveEventsSuccess = {
 export type PolymarketActiveEventsError = {
   ok: false;
   error: string;
-  issues?: Array<{
-    path: string;
-    message: string;
-  }>;
 };
 
 export type PolymarketActiveEventsResult =
   | PolymarketActiveEventsSuccess
   | PolymarketActiveEventsError;
 
-type NormalizedInput = z.output<typeof polymarketActiveEventsInputSchema>;
-
 export async function listPolymarketActiveEvents(
   input: PolymarketActiveEventsInput,
 ): Promise<PolymarketActiveEventsResult> {
   try {
-    const parsed = polymarketActiveEventsInputSchema.safeParse(input);
-    if (!parsed.success) {
-      return {
-        ok: false,
-        error: "Invalid input.",
-        issues: parsed.error.issues.map((issue) => ({
-          path: issue.path.join("."),
-          message: issue.message,
-        })),
-      };
-    }
-
-    const normalized: NormalizedInput = parsed.data;
+    const normalized = normalizeInput(input);
     const generatedAt = new Date().toISOString();
 
     const events = await listEvents({
@@ -136,6 +97,25 @@ export async function listPolymarketActiveEvents(
   }
 }
 
+function normalizeInput(input: PolymarketActiveEventsInput): {
+  query: string | null;
+  limit: number;
+  minVolume: number;
+  minLiquidity: number;
+} {
+  const limit = normalizePositiveInteger(input.limit, DEFAULT_EVENTS_LIMIT);
+  if (limit > MAX_EVENTS_LIMIT) {
+    throw new Error(`limit must be <= ${MAX_EVENTS_LIMIT}.`);
+  }
+
+  return {
+    query: normalizeQuery(input.query),
+    limit,
+    minVolume: normalizeNonNegativeNumber(input.minVolume, 0),
+    minLiquidity: normalizeNonNegativeNumber(input.minLiquidity, 0),
+  };
+}
+
 function toActiveEvent(event: PolymarketEvent): PolymarketActiveEvent {
   const marketCount = event.markets.length;
   const openMarkets = event.markets.filter((market) => !market.closed).length;
@@ -160,6 +140,15 @@ function toActiveEvent(event: PolymarketEvent): PolymarketActiveEvent {
   };
 }
 
+function normalizeQuery(input?: string): string | null {
+  if (!input) {
+    return null;
+  }
+
+  const normalized = input.trim().toLowerCase();
+  return normalized.length > 0 ? normalized : null;
+}
+
 function matchesQuery(event: PolymarketEvent, query: string | null): boolean {
   if (!query) {
     return true;
@@ -169,6 +158,34 @@ function matchesQuery(event: PolymarketEvent, query: string | null): boolean {
   const terms = query.split(/\s+/).filter(Boolean);
 
   return terms.every((term) => haystack.includes(term));
+}
+
+function normalizePositiveInteger(
+  value: number | undefined,
+  fallback: number,
+): number {
+  const normalized = value ?? fallback;
+  if (
+    !Number.isFinite(normalized) ||
+    !Number.isInteger(normalized) ||
+    normalized <= 0
+  ) {
+    throw new Error("limit must be a positive integer.");
+  }
+
+  return normalized;
+}
+
+function normalizeNonNegativeNumber(
+  value: number | undefined,
+  fallback: number,
+): number {
+  const normalized = value ?? fallback;
+  if (!Number.isFinite(normalized) || normalized < 0) {
+    throw new Error("minVolume and minLiquidity must be non-negative numbers.");
+  }
+
+  return normalized;
 }
 
 function formatError(error: unknown): string {

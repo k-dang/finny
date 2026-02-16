@@ -11,7 +11,7 @@ import {
   outputJson,
   parseOptionType,
   parseSymbols,
-} from "./alpaca/helpers";
+} from "../utils/alpaca/helpers";
 
 type PricesPayload = {
   symbols: string[];

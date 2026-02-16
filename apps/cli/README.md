@@ -27,7 +27,7 @@ From repo root:
 - `bun run cli alpaca price AAPL`
 - `bun run cli alpaca options AAPL --limit 10`
 - `bun run cli polymarket events --query "election" --limit 10`
-- `bun run cli polymarket scan --query "fed" --limit 10`
+- `bun run cli polymarket markets --query "fed" --limit 10`
 
 From `apps/cli`:
 
@@ -39,7 +39,7 @@ From `apps/cli`:
 - `bun run src/index.ts alpaca price AAPL,TSLA`
 - `bun run src/index.ts alpaca options AAPL --type call`
 - `bun run src/index.ts polymarket events --query "crypto"`
-- `bun run src/index.ts polymarket scan --query "trump" --trace`
+- `bun run src/index.ts polymarket markets --query "trump" --limit 10`
 
 After linking/installing the package bin:
 
@@ -75,7 +75,7 @@ Quick market data checks from the CLI:
 - `bun run cli alpaca options AAPL --expiration 2026-01-16 --type call --limit 25`
 - `bun run cli alpaca options AAPL --minimal`
 
-## Polymarket mispricing scan
+## Polymarket market data
 
 List active events (event-level `active=true` and `closed=false`):
 
@@ -83,17 +83,14 @@ List active events (event-level `active=true` and `closed=false`):
 - `bun run cli polymarket events --query "election" --limit 15`
 - `bun run cli polymarket events --min-volume 100000 --min-liquidity 50000`
 
-Run a read-only microstructure scan for potentially mispriced markets:
+List market-level raw pricing and momentum fields:
 
-- `bun run cli polymarket scan --query "fed"`
-- `bun run cli polymarket scan --query "trump deport" --limit 15 --max-spread-bps 500`
-- `bun run cli polymarket scan --query "election" --min-volume 1000 --time-horizon-hours 12`
-- `bun run cli polymarket scan --query "inflation" --trace`
+- `bun run cli polymarket markets --query "fed"`
+- `bun run cli polymarket markets --query "trump deport" --limit 15 --min-volume 1000`
+- `bun run cli polymarket markets --query "election" --min-liquidity 5000`
+- `bun run cli polymarket markets --no-accepting-orders-only`
 
-This scan is educational analysis only. It is informational and not investment advice.
-
-Trace mode (`--trace`) adds deterministic component-level scoring details for each
-ranked signal so you can validate the heuristics end to end from the CLI.
+Polymarket outputs are read-only educational analysis. They are informational and not investment advice.
 
 Quick validation (real one-turn model ping):
 
@@ -123,7 +120,7 @@ Chat has access to:
 - `ibkr_list_accounts` to list available IBKR account IDs
 - `ibkr_portfolio_snapshot` for read-only IBKR account summary and optional positions (requires accountId; call `ibkr_list_accounts` first when unknown)
 - `polymarket_active_events` for current active Polymarket events with optional filters
-- `polymarket_mispricing_scan` for read-only ranked Polymarket opportunity scans with rationale and risk flags
+- `polymarket_markets` for raw Polymarket market snapshots with pricing and momentum fields
 
 ## Parsing behavior
 
