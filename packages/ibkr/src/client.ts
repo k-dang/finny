@@ -20,7 +20,7 @@ export function createIbkrClient(options: IbkrRequestOptions = {}): IbkrClient {
   const {
     baseUrl = DEFAULT_BASE_URL,
     timeoutMs = DEFAULT_TIMEOUT_MS,
-    verifyTls = true,
+    verifyTls = false,
     fetchFn = fetch,
   } = options;
 

@@ -1,10 +1,8 @@
 import { gateway, stepCountIs, ToolLoopAgent } from "ai";
 import { alpacaTools } from "./tools/alpaca";
-import { getBashToolkit } from "./tools/bash";
+import { ibkrTools } from "./tools/ibkr";
 
 export async function createAgent() {
-  const toolkit = await getBashToolkit();
-
   return new ToolLoopAgent({
     model: gateway("anthropic/claude-sonnet-4.5"),
     instructions: `You are Finny, a finance-focused CLI agent.
@@ -19,7 +17,7 @@ How you respond:
 - End recommendations with a clear action and key caveats.
 - If market data is missing, state assumptions explicitly.
 - For stock quotes and option chains, use alpaca_price and alpaca_options.
-- If you need local machine context, use the bash tool.
+- For read-only IBKR account snapshots: call ibkr_list_accounts first when the account is unknown, then ibkr_portfolio_snapshot with the chosen accountId.
 - Before running non-trivial commands, briefly state intent and favor read-only inspection first.
 
 Safety:
@@ -29,8 +27,8 @@ Safety:
 `,
     stopWhen: stepCountIs(8),
     tools: {
-      bash: toolkit.tools.bash,
       ...alpacaTools,
+      ...ibkrTools,
     },
   });
 }

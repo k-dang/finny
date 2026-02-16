@@ -6,6 +6,7 @@ Finny is a Bun-native finance-focused CLI app.
 
 - `AI_GATEWAY_API_KEY` must be set for `chat`.
 - `ALPACA_API_KEY` and `ALPACA_API_SECRET` must be set for `alpaca` and Alpaca-backed chat tools.
+- IBKR chat snapshots require IBKR Client Portal Gateway running locally (default `https://localhost:5000`).
 
 ## Commands
 
@@ -93,9 +94,10 @@ to show step and tool traces.
 
 Chat has access to:
 
-- `bash` for local shell inspection when needed
 - `alpaca_price` for latest stock prices
 - `alpaca_options` for option chain snapshots
+- `ibkr_list_accounts` to list available IBKR account IDs
+- `ibkr_portfolio_snapshot` for read-only IBKR account summary and optional positions (requires accountId; call `ibkr_list_accounts` first when unknown)
 
 ## Parsing behavior
 

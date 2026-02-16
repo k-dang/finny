@@ -40,15 +40,6 @@ Optional from repo root:
 - In TTY mode, keep REPL role prompts visually distinct (`user>` vs `assistant>`); keep non-TTY output plain text.
 - When changing behavior, update `README.md` and this file's behavior contract in the same change.
 
-## Behavior Contract
-
-- The CLI is finance-focused and optimizes for stock/options decision support.
-- Running `cli` with no arguments prints `finny is ready`.
-- `chat` remains analysis-oriented by default and does not execute broker orders.
-- `chat` may run local shell commands through the bash tool when needed.
-- `chat` may fetch read-only Alpaca market data via `alpaca_price` and `alpaca_options`.
-- `alpaca` provides read-only Alpaca market data checks for quick local testing.
-
 ## Validation Checklist
 
 For every CLI change, run:
@@ -57,4 +48,3 @@ For every CLI change, run:
 2. `bun run check-types`
 3. `bun run src/index.ts chat --smoke` (real one-turn model ping)
 4. `bun run src/index.ts --help`
-5. `bun run src/index.ts alpaca price AAPL --minimal` (requires Alpaca credentials)

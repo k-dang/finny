@@ -98,7 +98,12 @@ class EventRenderer {
     ]);
   }
 
-  renderToolCall({ stepNumber, toolName, toolCallId, input }: ToolCallEvent): void {
+  renderToolCall({
+    stepNumber,
+    toolName,
+    toolCallId,
+    input,
+  }: ToolCallEvent): void {
     this.write([
       `${this.stepPrefix(stepNumber)} ${this.paint("yellow", "tool call")} ${toolName} id=${toolCallId}`,
       `  ${this.paint("dim", "input:")} ${this.preview(input)}`,
@@ -117,7 +122,12 @@ class EventRenderer {
     ]);
   }
 
-  renderToolError({ stepNumber, toolName, toolCallId, error }: ToolErrorEvent): void {
+  renderToolError({
+    stepNumber,
+    toolName,
+    toolCallId,
+    error,
+  }: ToolErrorEvent): void {
     this.write([
       `${this.stepPrefix(stepNumber)} ${this.paint("red", "tool error")} ${toolName} id=${toolCallId}`,
       `  ${this.paint("dim", "error:")} ${this.errorMessage(error)}`,
@@ -126,7 +136,9 @@ class EventRenderer {
 
   renderAbort(reason?: string): void {
     const suffix = reason ? ` reason=${reason}` : "";
-    this.write([`${this.agentPrefix()} ${this.paint("red", "aborted")}${suffix}`]);
+    this.write([
+      `${this.agentPrefix()} ${this.paint("red", "aborted")}${suffix}`,
+    ]);
   }
 
   renderStreamError(error: unknown): void {
@@ -136,7 +148,9 @@ class EventRenderer {
   }
 
   renderChatError(message: string): void {
-    this.write([`${this.agentPrefix()} ${this.paint("red", "chat error")}: ${message}`]);
+    this.write([
+      `${this.agentPrefix()} ${this.paint("red", "chat error")}: ${message}`,
+    ]);
   }
 
   private formatUsage(usage?: StepSummaryEvent["usage"]): string {
@@ -154,7 +168,8 @@ class EventRenderer {
     }
 
     const input = typeof inputTokens === "number" ? String(inputTokens) : "-";
-    const output = typeof outputTokens === "number" ? String(outputTokens) : "-";
+    const output =
+      typeof outputTokens === "number" ? String(outputTokens) : "-";
     const total = typeof totalTokens === "number" ? String(totalTokens) : "-";
     return ` tokens=${input}/${output}/${total}`;
   }
