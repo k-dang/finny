@@ -8,7 +8,9 @@ const ibkrPortfolioSnapshotInputSchema = z
   .object({
     accountId: z
       .string()
-      .describe("IBKR account id such as U1234567. Use ibkr_list_accounts first if unknown."),
+      .describe(
+        "IBKR account id such as U1234567. Use ibkr_list_accounts first if unknown.",
+      ),
     includePositions: z
       .boolean()
       .optional()
@@ -117,7 +119,8 @@ export const ibkrTools = {
         return {
           ok: false,
           code: "invalid_input",
-          error: "accountId is required. Use ibkr_list_accounts first if unknown.",
+          error:
+            "accountId is required. Use ibkr_list_accounts first if unknown.",
         };
       }
 

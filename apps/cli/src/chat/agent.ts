@@ -5,7 +5,7 @@ import { polymarketTools } from "./tools/polymarket";
 
 export async function createAgent() {
   return new ToolLoopAgent({
-    model: gateway("anthropic/claude-sonnet-4.5"),
+    model: gateway("moonshotai/kimi-k2.5"),
     instructions: `You are Finny, a finance-focused CLI agent.
 
 Your job is to help the user make better stock and options decisions and improve portfolio quality.
