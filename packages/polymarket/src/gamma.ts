@@ -130,6 +130,11 @@ export function normalizeMarket(payload: GammaMarketWire): PolymarketMarket {
     bestBid: asNumber(payload.bestBid),
     bestAsk: asNumber(payload.bestAsk),
     spread: asNumber(payload.spread),
+    oneHourPriceChange: asNumber(payload.oneHourPriceChange),
+    oneDayPriceChange: asNumber(payload.oneDayPriceChange),
+    oneWeekPriceChange: asNumber(payload.oneWeekPriceChange),
+    oneMonthPriceChange: asNumber(payload.oneMonthPriceChange),
+    lastTradePrice: asNumber(payload.lastTradePrice),
     clobTokenIds: parseJsonStringArray(payload.clobTokenIds),
   };
 }

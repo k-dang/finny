@@ -38,8 +38,14 @@ export async function getOrderbookSummary(options: {
   const bids = normalizeOrderLevels(payload.bids);
   const asks = normalizeOrderLevels(payload.asks);
 
-  const [topBid] = bids;
-  const [topAsk] = asks;
+  const bestBid = bids.reduce<number | null>(
+    (best, level) => (best === null || level.price > best ? level.price : best),
+    null,
+  );
+  const bestAsk = asks.reduce<number | null>(
+    (best, level) => (best === null || level.price < best ? level.price : best),
+    null,
+  );
 
   return {
     market: asString(payload.market) ?? "",
@@ -48,8 +54,8 @@ export async function getOrderbookSummary(options: {
     hash: asString(payload.hash) ?? "",
     bids,
     asks,
-    bestBid: topBid ? topBid.price : null,
-    bestAsk: topAsk ? topAsk.price : null,
+    bestBid,
+    bestAsk,
     minOrderSize: asNumber(payload.min_order_size),
     tickSize: asNumber(payload.tick_size),
     negRisk: asBoolean(payload.neg_risk),

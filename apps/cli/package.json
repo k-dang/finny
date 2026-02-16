@@ -26,6 +26,7 @@
   "dependencies": {
     "@repo/alpaca": "workspace:*",
     "@repo/ibkr": "workspace:*",
+    "@repo/polymarket": "workspace:*",
     "ai": "^6.0.78",
     "bash-tool": "^1.3.14",
     "commander": "^14.0.3",

@@ -37,6 +37,7 @@ Optional from repo root:
 - Use `commander` for command routing, options, help/version output, and parse errors.
 - Keep `src/index.ts` minimal; place command behavior in `src/commands` and runtime logic in focused modules.
 - Keep `chat` output clean by default; reserve step/tool telemetry for explicit verbose mode (`--verbose` or `/verbose on`).
+- Keep command output machine-readable JSON by default for data commands; gate diagnostics behind explicit flags (for example `--trace`).
 - In TTY mode, keep REPL role prompts visually distinct (`user>` vs `assistant>`); keep non-TTY output plain text.
 - When changing behavior, update `README.md` and this file's behavior contract in the same change.
 

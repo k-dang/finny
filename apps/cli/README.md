@@ -26,6 +26,7 @@ From repo root:
 - `bun run cli chat --smoke`
 - `bun run cli alpaca price AAPL`
 - `bun run cli alpaca options AAPL --limit 10`
+- `bun run cli polymarket scan --query "fed" --limit 10`
 
 From `apps/cli`:
 
@@ -36,6 +37,7 @@ From `apps/cli`:
 - `bun run src/index.ts bad-command` (fails with strict parse error)
 - `bun run src/index.ts alpaca price AAPL,TSLA`
 - `bun run src/index.ts alpaca options AAPL --type call`
+- `bun run src/index.ts polymarket scan --query "trump" --trace`
 
 After linking/installing the package bin:
 
@@ -70,6 +72,18 @@ Quick market data checks from the CLI:
 - `bun run cli alpaca options AAPL`
 - `bun run cli alpaca options AAPL --expiration 2026-01-16 --type call --limit 25`
 - `bun run cli alpaca options AAPL --minimal`
+
+## Polymarket mispricing scan
+
+Run a read-only microstructure scan for potentially mispriced markets:
+
+- `bun run cli polymarket scan --query "fed"`
+- `bun run cli polymarket scan --query "trump deport" --limit 15 --max-spread-bps 500`
+- `bun run cli polymarket scan --query "election" --min-volume 1000 --time-horizon-hours 12`
+- `bun run cli polymarket scan --query "inflation" --trace`
+
+Trace mode (`--trace`) adds deterministic component-level scoring details for each
+ranked signal so you can validate the heuristics end to end from the CLI.
 
 Quick validation (real one-turn model ping):
 

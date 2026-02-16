@@ -5,6 +5,7 @@ import { Command } from "commander";
 import { registerAlpacaCommand } from "./commands/alpaca";
 import { registerChatCommand } from "./commands/chat";
 import { registerIbkrCommand } from "./commands/ibkr";
+import { registerPolymarketCommand } from "./commands/polymarket";
 
 type PackageJson = {
   version?: string;
@@ -25,6 +26,7 @@ export function buildProgram(): Command {
   registerChatCommand(program);
   registerAlpacaCommand(program);
   registerIbkrCommand(program);
+  registerPolymarketCommand(program);
 
   return program;
 }
