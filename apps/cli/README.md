@@ -82,6 +82,8 @@ Run a read-only microstructure scan for potentially mispriced markets:
 - `bun run cli polymarket scan --query "election" --min-volume 1000 --time-horizon-hours 12`
 - `bun run cli polymarket scan --query "inflation" --trace`
 
+This scan is educational analysis only. It is informational and not investment advice.
+
 Trace mode (`--trace`) adds deterministic component-level scoring details for each
 ranked signal so you can validate the heuristics end to end from the CLI.
 
@@ -112,6 +114,7 @@ Chat has access to:
 - `alpaca_options` for option chain snapshots
 - `ibkr_list_accounts` to list available IBKR account IDs
 - `ibkr_portfolio_snapshot` for read-only IBKR account summary and optional positions (requires accountId; call `ibkr_list_accounts` first when unknown)
+- `polymarket_mispricing_scan` for read-only ranked Polymarket opportunity scans with rationale and risk flags
 
 ## Parsing behavior
 
