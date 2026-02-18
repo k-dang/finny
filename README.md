@@ -18,6 +18,7 @@ This Turborepo includes the following packages/apps:
 
 - `web`: another [Next.js](https://nextjs.org/) app
 - `cli`: a Bun-native CLI app
+- `oc-cli`: a Bun-native OpenCode CLI app
 - `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
 - `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
 
