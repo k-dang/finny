@@ -19,7 +19,8 @@
     "check-types": "turbo run check-types",
     "web": "turbo dev --filter=web",
     "cli": "bun run --cwd apps/cli dev",
-    "oc-cli": "bun run --cwd apps/oc-cli dev"
+    "oc-cli": "bun run --cwd apps/oc-cli dev",
+    "setup": "bun run ./scripts/setup.ts"
   },
   "workspaces": [
     "apps/*",

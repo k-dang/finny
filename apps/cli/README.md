@@ -8,6 +8,12 @@ Finny is a Bun-native finance-focused CLI app.
 - `ALPACA_API_KEY` and `ALPACA_API_SECRET` must be set for `alpaca` and Alpaca-backed chat tools.
 - IBKR chat snapshots require IBKR Client Portal Gateway running locally (default `https://localhost:5000`).
 
+Start the gateway from repo root:
+
+- `bun run setup`
+
+`setup` uses `scripts/setup.ts` and expects the gateway in `clientportal.gw`.
+
 ## Commands
 
 - `bun run dev`
