@@ -1,6 +1,6 @@
 import { createInterface } from "node:readline/promises";
-import type { ModelMessage } from "ai";
-import { createAgent } from "./agent";
+import { type ModelMessage } from "ai";
+import { agent } from "./agent";
 import { createEventRenderer } from "./eventRenderer";
 
 type RunChatOptions = {
@@ -52,7 +52,6 @@ export async function runChatSmoke(
   }, timeoutMs);
 
   try {
-    const agent = await createAgent();
     const result = await agent.stream({
       messages: [{ role: "user", content: "Reply with exactly: pong" }],
       abortSignal: abortController.signal,
@@ -87,7 +86,6 @@ export async function runChat(options: RunChatOptions = {}): Promise<void> {
   ensureGatewayApiKey();
 
   let verbose = options.verbose ?? false;
-  const agent = await createAgent();
   const eventRenderer = createEventRenderer();
   const messages: ModelMessage[] = [];
   const turnHistory: CompletedTurn[] = [];

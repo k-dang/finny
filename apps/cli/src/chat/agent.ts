@@ -3,10 +3,9 @@ import { alpacaTools } from "./tools/alpaca";
 import { ibkrTools } from "./tools/ibkr";
 import { polymarketTools } from "./tools/polymarket";
 
-export async function createAgent() {
-  return new ToolLoopAgent({
-    model: gateway("moonshotai/kimi-k2.5"),
-    instructions: `You are Finny, a finance-focused CLI agent.
+export const agent = new ToolLoopAgent({
+  model: gateway("moonshotai/kimi-k2.5"),
+  instructions: `You are Finny, a finance-focused CLI agent.
 
 Your job is to help the user make better stock and options decisions and improve portfolio quality.
 
@@ -28,11 +27,10 @@ Safety:
 - Do not imply guaranteed returns.
 - Highlight material risks before upside.
 `,
-    stopWhen: stepCountIs(8),
-    tools: {
-      ...alpacaTools,
-      ...ibkrTools,
-      ...polymarketTools,
-    },
-  });
-}
+  stopWhen: stepCountIs(8),
+  tools: {
+    ...alpacaTools,
+    ...ibkrTools,
+    ...polymarketTools,
+  },
+});

@@ -19,7 +19,7 @@ describe("buildUrl", () => {
     });
 
     expect(url).toBe(
-      "https://gamma-api.polymarket.com/markets?limit=10&closed=false&query=fed",
+      "https://gamma-api.polymarket.com/markets?limit=10&closed=false&query=fed"
     );
   });
 });
@@ -44,7 +44,8 @@ describe("coercion helpers", () => {
 
 describe("requestPolymarketJson", () => {
   it("returns parsed JSON on ok response", async () => {
-    const fetchFn: typeof fetch = async () => new Response('{"ok":true}', { status: 200 });
+    const fetchFn: typeof fetch = async () =>
+      new Response('{"ok":true}', { status: 200 });
 
     const payload = await requestPolymarketJson<{ ok: boolean }>({
       fetchFn,
@@ -62,11 +63,11 @@ describe("requestPolymarketJson", () => {
       requestPolymarketJson({
         fetchFn,
         url: "https://example.com/markets",
-      }),
+      })
     ).rejects.toThrow(
       new PolymarketApiError(
-        "Polymarket API error (500) for https://example.com/markets: server error",
-      ),
+        "Polymarket API error (500) for https://example.com/markets: server error"
+      )
     );
   });
 
@@ -81,11 +82,11 @@ describe("requestPolymarketJson", () => {
       requestPolymarketJson({
         fetchFn,
         url: "https://example.com/markets",
-      }),
+      })
     ).rejects.toThrow(
       new PolymarketApiError(
-        "Invalid JSON response for https://example.com/markets.",
-      ),
+        "Invalid JSON response for https://example.com/markets."
+      )
     );
   });
 
@@ -98,11 +99,11 @@ describe("requestPolymarketJson", () => {
       requestPolymarketJson({
         fetchFn,
         url: "https://example.com/markets",
-      }),
+      })
     ).rejects.toThrow(
       new PolymarketApiError(
-        "Failed to fetch https://example.com/markets. Details: network down",
-      ),
+        "Failed to fetch https://example.com/markets. Details: network down"
+      )
     );
   });
 });

@@ -65,11 +65,13 @@ describe("isAuthenticatedPayload", () => {
     expect(isAuthenticatedPayload({ status: "ok" })).toBe(true);
     expect(isAuthenticatedPayload({ authenticated: true })).toBe(true);
     expect(
-      isAuthenticatedPayload({ iserver: { authStatus: { authenticated: true } } }),
+      isAuthenticatedPayload({
+        iserver: { authStatus: { authenticated: true } },
+      }),
     ).toBe(true);
-    expect(isAuthenticatedPayload({ authStatus: { authenticated: true } })).toBe(
-      true,
-    );
+    expect(
+      isAuthenticatedPayload({ authStatus: { authenticated: true } }),
+    ).toBe(true);
   });
 
   it("returns false for non-auth payloads", () => {
@@ -95,7 +97,11 @@ describe("createIbkrClient", () => {
       verifyTls: true,
       fetchFn,
     });
-    await client.getOrders({ accountId: "DU9001", filters: "Filled", force: true });
+    await client.getOrders({
+      accountId: "DU9001",
+      filters: "Filled",
+      force: true,
+    });
 
     expect(calls.map((call) => call.input)).toEqual([
       "https://localhost:5000/v1/api/iserver/accounts",
