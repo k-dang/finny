@@ -24,6 +24,7 @@
     "typescript": "5.9.2"
   },
   "dependencies": {
+    "@opencode-ai/sdk": "^1.2.10",
     "commander": "^14.0.3"
   }
 }

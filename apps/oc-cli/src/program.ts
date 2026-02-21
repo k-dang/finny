@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Command } from "commander";
+import { registerChatCommand } from "./commands/chat";
 import { registerStartCommand } from "./commands/start";
 
 type PackageJson = {
@@ -19,6 +20,7 @@ export function buildProgram(): Command {
     .exitOverride();
 
   registerStartCommand(program);
+  registerChatCommand(program);
 
   return program;
 }
