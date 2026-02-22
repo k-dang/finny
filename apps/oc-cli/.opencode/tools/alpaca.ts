@@ -4,7 +4,7 @@ import {
   type AlpacaCredentials,
   type NormalizedOption,
   type NormalizedPrice,
-} from "../../../../packages/alpaca/src/index.ts";
+} from "@repo/alpaca";
 import { tool } from "@opencode-ai/plugin";
 
 const MAX_SYMBOLS = 25;

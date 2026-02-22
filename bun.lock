@@ -42,6 +42,7 @@
       },
       "dependencies": {
         "@opencode-ai/sdk": "^1.2.10",
+        "@repo/alpaca": "workspace:*",
         "commander": "^14.0.3",
       },
       "devDependencies": {
