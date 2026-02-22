@@ -53,6 +53,11 @@ Start an interactive OpenCode SDK-backed session:
 - `bun run src/index.ts chat`
 - `oc-cli chat`
 
+Behavior:
+
+- Assistant output streams incrementally as events arrive (instead of waiting for a full turn response).
+- During a response, press Ctrl+C once to interrupt the current turn; press Ctrl+C again at prompt to exit.
+
 Quick validation (real one-turn model ping):
 
 - `bun run oc-cli chat --smoke`
@@ -61,10 +66,8 @@ REPL commands:
 
 - `/help` Show chat commands
 - `/status` Show current chat state
-- `/verbose on|off` Toggle extra request diagnostics
-- `/undo` Remove the most recent completed turn
-- `/retry` Retry the last input
-- `/clear` Clear in-memory conversation history
+- `/verbose on|off` Toggle compact stream diagnostics
+- `/clear` Start a fresh session
 - `/exit` Exit chat
 - `/quit` Exit chat
 

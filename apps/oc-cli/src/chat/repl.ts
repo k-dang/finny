@@ -9,16 +9,14 @@ type RunChatSmokeOptions = {
   timeoutMs?: number;
 };
 
-type OpencodeClient = {
-  session: {
-    create(input: { body: { title: string } }): Promise<unknown>;
-    prompt(input: {
-      path: { id: string };
-      body: { parts: Array<{ type: "text"; text: string }> };
-    }): Promise<unknown>;
-  };
-  instance: {
-    dispose(): Promise<void>;
+type MessagePartDeltaEvent = {
+  type: "message.part.delta";
+  properties: {
+    sessionID: string;
+    messageID: string;
+    partID: string;
+    field: string;
+    delta: string;
   };
 };
 
@@ -40,67 +38,6 @@ function rolePrompt(role: keyof typeof ANSI_ROLE_COLORS): string {
   return `${ANSI_ROLE_COLORS[role]}${label}${ANSI_RESET}`;
 }
 
-function textPart(text: string) {
-  return [{ type: "text" as const, text }];
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
-function collectTextParts(value: unknown, out: string[]): void {
-  if (Array.isArray(value)) {
-    for (const item of value) {
-      collectTextParts(item, out);
-    }
-    return;
-  }
-
-  if (!isRecord(value)) {
-    return;
-  }
-
-  if (value.type === "text" && typeof value.text === "string") {
-    out.push(value.text);
-  }
-
-  for (const nested of Object.values(value)) {
-    collectTextParts(nested, out);
-  }
-}
-
-function assistantTextFromPromptResult(result: unknown): string {
-  if (!isRecord(result)) {
-    return "";
-  }
-
-  const data = result.data;
-  if (!data) {
-    return "";
-  }
-
-  const textParts: string[] = [];
-  collectTextParts(data, textParts);
-  return textParts.join("").trim();
-}
-
-function sessionIdFromCreateResult(result: unknown): string {
-  if (!isRecord(result)) {
-    throw new Error("Invalid session response.");
-  }
-
-  const fromData = result.data;
-  if (isRecord(fromData) && typeof fromData.id === "string") {
-    return fromData.id;
-  }
-
-  if (typeof result.id === "string") {
-    return result.id;
-  }
-
-  throw new Error("Session id missing in response.");
-}
-
 function explainStartupError(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
   if (/spawn\s+opencode\s+ENOENT/i.test(message) || /ENOENT/i.test(message)) {
@@ -117,6 +54,65 @@ function pickPort(): number {
   );
 }
 
+function toMessagePartDeltaEvent(event: unknown): MessagePartDeltaEvent | null {
+  if (!event || typeof event !== "object") {
+    return null;
+  }
+
+  const candidate = event as {
+    type?: unknown;
+    properties?: {
+      sessionID?: unknown;
+      messageID?: unknown;
+      partID?: unknown;
+      field?: unknown;
+      delta?: unknown;
+    };
+  };
+
+  if (candidate.type !== "message.part.delta") {
+    return null;
+  }
+
+  if (!candidate.properties || typeof candidate.properties !== "object") {
+    return null;
+  }
+
+  const { sessionID, messageID, partID, field, delta } = candidate.properties;
+  if (
+    typeof sessionID !== "string" ||
+    typeof messageID !== "string" ||
+    typeof partID !== "string" ||
+    typeof field !== "string" ||
+    typeof delta !== "string"
+  ) {
+    return null;
+  }
+
+  return {
+    type: "message.part.delta",
+    properties: {
+      sessionID,
+      messageID,
+      partID,
+      field,
+      delta,
+    },
+  };
+}
+
+function shortId(value: string): string {
+  if (value.length <= 8) {
+    return value;
+  }
+
+  return value.slice(0, 8);
+}
+
+function writeVerboseLine(message: string): void {
+  process.stderr.write(`[verbose] ${message}\n`);
+}
+
 export async function runChatSmoke(
   options: RunChatSmokeOptions = {},
 ): Promise<void> {
@@ -126,33 +122,39 @@ export async function runChatSmoke(
     abortController.abort("Smoke check timed out.");
   }, timeoutMs);
 
-  let server: { close(): void } | null = null;
+  let runtime: Awaited<ReturnType<typeof createOpencode>> | null = null;
 
   try {
-    const runtime = await createOpencode({
+    runtime = await createOpencode({
       signal: abortController.signal,
       timeout: timeoutMs,
       port: pickPort(),
     });
 
     const { client } = runtime;
-    server = runtime.server;
 
     const session = await client.session.create({
+      throwOnError: true,
       body: {
         title: "oc-cli smoke",
       },
     });
 
-    const sessionId = sessionIdFromCreateResult(session);
+    const sessionId = session.data.id;
     const response = await client.session.prompt({
+      throwOnError: true,
       path: { id: sessionId },
       body: {
-        parts: textPart("Reply with exactly: pong"),
+        parts: [{ type: "text", text: "Reply with exactly: pong" }],
       },
     });
 
-    const assistantText = assistantTextFromPromptResult(response);
+    const assistantText = response.data.parts
+      .filter((part) => part.type === "text")
+      .map((part) => part.text)
+      .join("")
+      .trim();
+
     if (assistantText.length === 0) {
       console.error("chat smoke: failed - empty assistant response");
       process.exit(1);
@@ -171,14 +173,14 @@ export async function runChatSmoke(
     process.exit(1);
   } finally {
     clearTimeout(timeout);
-    if (server) {
-      server.close();
+    if (runtime) {
+      runtime.server.close();
     }
   }
 }
 
 export async function runChat(options: RunChatOptions = {}): Promise<void> {
-  const verbose = options.verbose ?? false;
+  let verbose = options.verbose ?? false;
 
   const rl = createInterface({
     input: process.stdin,
@@ -186,19 +188,23 @@ export async function runChat(options: RunChatOptions = {}): Promise<void> {
     terminal: true,
   });
 
-  let runtime: {
-    client: OpencodeClient;
-    server: { close(): void };
-    sessionId: string;
-  } | null = null;
+  let runtime: Awaited<ReturnType<typeof createOpencode>> | null = null;
+  let sessionId: string | null = null;
 
   const userPrompt = rolePrompt("user");
   const assistantPrompt = rolePrompt("assistant");
+  let currentAbort: AbortController | null = null;
+  let awaitingInput = false;
+  let sigintCount = 0;
 
   const printHelp = () => {
     console.log(
-      "Commands:\n  /help   Show command help\n  /clear  Start a fresh session\n  /exit   Exit chat\n  /quit   Exit chat",
+      "Commands:\n  /help            Show command help\n  /status          Show current chat status\n  /verbose on|off  Toggle compact stream diagnostics\n  /clear           Start a fresh session\n  /exit            Exit chat\n  /quit            Exit chat",
     );
+  };
+
+  const clearCurrentLine = () => {
+    process.stdout.write("\r\u001b[2K");
   };
 
   const shutdownRuntime = async (): Promise<void> => {
@@ -214,28 +220,25 @@ export async function runChat(options: RunChatOptions = {}): Promise<void> {
 
     runtime.server.close();
     runtime = null;
+    sessionId = null;
   };
 
   const ensureReady = async () => {
-    if (runtime) {
-      return runtime;
+    if (runtime && sessionId) {
+      return { runtime, sessionId };
     }
 
-    const created = await createOpencode({ port: pickPort() });
-    const client = created.client as unknown as OpencodeClient;
-    const session = await client.session.create({
+    runtime = await createOpencode({ port: pickPort() });
+    const session = await runtime.client.session.create({
+      throwOnError: true,
       body: {
         title: "oc-cli chat",
       },
     });
 
-    runtime = {
-      client,
-      server: created.server,
-      sessionId: sessionIdFromCreateResult(session),
-    };
+    sessionId = session.data.id;
 
-    return runtime;
+    return { runtime, sessionId };
   };
 
   const resetSession = async (): Promise<void> => {
@@ -244,6 +247,20 @@ export async function runChat(options: RunChatOptions = {}): Promise<void> {
   };
 
   const handleSigint = () => {
+    if (currentAbort) {
+      process.stderr.write("\nInterrupting response...\n");
+      currentAbort.abort("Interrupted by user.");
+      return;
+    }
+
+    if (awaitingInput) {
+      sigintCount += 1;
+      if (sigintCount === 1) {
+        process.stderr.write("\nPress Ctrl+C again to exit.\n");
+        return;
+      }
+    }
+
     process.stderr.write("\nExiting chat.\n");
     rl.close();
     process.exit(0);
@@ -257,7 +274,11 @@ export async function runChat(options: RunChatOptions = {}): Promise<void> {
 
   try {
     while (true) {
+      awaitingInput = true;
       const input = (await rl.question(`${userPrompt} `)).trim();
+      awaitingInput = false;
+      sigintCount = 0;
+
       if (input.length === 0) {
         continue;
       }
@@ -273,6 +294,35 @@ export async function runChat(options: RunChatOptions = {}): Promise<void> {
           continue;
         }
 
+        if (input === "/status") {
+          const state = runtime && sessionId ? "ready" : "not-started";
+          const responding = currentAbort ? "yes" : "no";
+          console.log(
+            `Status: session=${state}, responding=${responding}, verbose=${verbose ? "on" : "off"}.`,
+          );
+          continue;
+        }
+
+        if (input.startsWith("/verbose")) {
+          const [, mode] = input.split(/\s+/, 2);
+          const normalizedMode = mode?.toLowerCase();
+
+          if (normalizedMode === "on") {
+            verbose = true;
+            console.log("Verbose traces enabled.");
+            continue;
+          }
+
+          if (normalizedMode === "off") {
+            verbose = false;
+            console.log("Verbose traces disabled.");
+            continue;
+          }
+
+          console.log("Usage: /verbose on|off");
+          continue;
+        }
+
         if (input === "/clear") {
           await resetSession();
           console.log("Started a fresh session.");
@@ -285,26 +335,301 @@ export async function runChat(options: RunChatOptions = {}): Promise<void> {
 
       try {
         const ready = await ensureReady();
+        const turnAbort = new AbortController();
+        currentAbort = turnAbort;
+
         process.stdout.write(`${assistantPrompt} thinking...`);
-        const response = await ready.client.session.prompt({
-          path: { id: ready.sessionId },
-          body: {
-            parts: textPart(input),
-          },
+        const events = await ready.runtime.client.event.subscribe({
+          throwOnError: true,
+          signal: turnAbort.signal,
         });
 
-        process.stdout.write("\r\u001b[2K");
-        const assistantText = assistantTextFromPromptResult(response);
-        if (assistantText.length === 0) {
+        let assistantStarted = false;
+        let assistantHasText = false;
+        let thinkingVisible = true;
+        const userMessageIDs = new Set<string>();
+        const assistantMessageIDs = new Set<string>();
+        const textByPartID = new Map<string, string>();
+        let streamError: string | null = null;
+
+        const streamTask = (async () => {
+          try {
+            for await (const event of events.stream) {
+              if (turnAbort.signal.aborted) {
+                break;
+              }
+
+              const deltaEvent = toMessagePartDeltaEvent(event);
+
+              if (deltaEvent) {
+                const { sessionID, messageID, partID, field, delta } =
+                  deltaEvent.properties;
+
+                if (verbose) {
+                  writeVerboseLine(
+                    `text: ${delta} (session ${shortId(sessionID)}, message ${shortId(messageID)}, part ${shortId(partID)})`,
+                  );
+                }
+
+                if (
+                  sessionID !== ready.sessionId ||
+                  field !== "text" ||
+                  userMessageIDs.has(messageID) ||
+                  delta.length === 0
+                ) {
+                  continue;
+                }
+
+                if (!assistantStarted) {
+                  clearCurrentLine();
+                  process.stdout.write(`${assistantPrompt} `);
+                  assistantStarted = true;
+                  thinkingVisible = false;
+                }
+
+                process.stdout.write(delta);
+                assistantHasText = true;
+
+                const previous = textByPartID.get(partID) ?? "";
+                textByPartID.set(partID, `${previous}${delta}`);
+                continue;
+              }
+
+              if (verbose) {
+                switch (event.type) {
+                  case "message.updated": {
+                    const info = event.properties.info;
+                    writeVerboseLine(
+                      `message ${info.role} updated (session ${shortId(info.sessionID)}, message ${shortId(info.id)})`,
+                    );
+                    break;
+                  }
+                  case "message.part.updated": {
+                    const part = event.properties.part;
+                    if (part.type === "text") {
+                      writeVerboseLine(
+                        `text snapshot updated (message ${shortId(part.messageID)}, part ${shortId(part.id)})`,
+                      );
+                      break;
+                    }
+
+                    writeVerboseLine(
+                      `part ${part.type} updated (message ${shortId(part.messageID)}, part ${shortId(part.id)})`,
+                    );
+                    break;
+                  }
+                  case "session.status": {
+                    writeVerboseLine(
+                      `session status ${event.properties.status.type} (session ${shortId(event.properties.sessionID)})`,
+                    );
+                    break;
+                  }
+                  case "session.idle": {
+                    writeVerboseLine(
+                      `session idle (session ${shortId(event.properties.sessionID)})`,
+                    );
+                    break;
+                  }
+                  case "session.error": {
+                    const errorInfo = event.properties.error;
+                    const errorMessage =
+                      typeof errorInfo?.data === "object" &&
+                      errorInfo.data !== null &&
+                      "message" in errorInfo.data &&
+                      typeof errorInfo.data.message === "string"
+                        ? errorInfo.data.message
+                        : (errorInfo?.name ?? "unknown");
+                    writeVerboseLine(
+                      `session error: ${errorMessage} (session ${shortId(event.properties.sessionID ?? "unknown")})`,
+                    );
+                    break;
+                  }
+                  default: {
+                    break;
+                  }
+                }
+              }
+
+              switch (event.type) {
+                case "message.updated": {
+                  if (event.properties.info.sessionID !== ready.sessionId) {
+                    continue;
+                  }
+
+                  const info = event.properties.info;
+                  const messageID = info.id;
+
+                  if (info.role === "user") {
+                    userMessageIDs.add(messageID);
+                  } else if (info.role === "assistant") {
+                    assistantMessageIDs.add(messageID);
+                  }
+                  continue;
+                }
+                case "message.part.updated": {
+                  const { part, delta } = event.properties;
+                  if (
+                    part.sessionID !== ready.sessionId ||
+                    part.type !== "text"
+                  ) {
+                    continue;
+                  }
+
+                  const messageID = part.messageID;
+                  if (userMessageIDs.has(messageID)) {
+                    continue;
+                  }
+
+                  let chunk = "";
+                  if (typeof delta === "string" && delta.length > 0) {
+                    chunk = delta;
+                  } else {
+                    const previous = textByPartID.get(part.id) ?? "";
+                    chunk = part.text.startsWith(previous)
+                      ? part.text.slice(previous.length)
+                      : part.text;
+                    textByPartID.set(part.id, part.text);
+                  }
+
+                  if (chunk.length === 0) {
+                    continue;
+                  }
+
+                  if (
+                    !assistantMessageIDs.has(messageID) &&
+                    chunk.trim() === input.trim()
+                  ) {
+                    continue;
+                  }
+
+                  if (!assistantStarted) {
+                    clearCurrentLine();
+                    process.stdout.write(`${assistantPrompt} `);
+                    assistantStarted = true;
+                    thinkingVisible = false;
+                  }
+
+                  process.stdout.write(chunk);
+                  assistantHasText = true;
+                  continue;
+                }
+                case "session.error": {
+                  const eventSessionID = event.properties.sessionID;
+                  if (eventSessionID && eventSessionID !== ready.sessionId) {
+                    continue;
+                  }
+
+                  const errorInfo = event.properties.error;
+                  const errorMessage =
+                    typeof errorInfo?.data === "object" &&
+                    errorInfo.data !== null &&
+                    "message" in errorInfo.data &&
+                    typeof errorInfo.data.message === "string"
+                      ? errorInfo.data.message
+                      : null;
+
+                  streamError =
+                    errorMessage ?? errorInfo?.name ?? "Unknown chat error.";
+                  continue;
+                }
+                case "session.idle": {
+                  if (event.properties.sessionID !== ready.sessionId) {
+                    continue;
+                  }
+                  break;
+                }
+                case "session.status": {
+                  if (event.properties.sessionID !== ready.sessionId) {
+                    continue;
+                  }
+
+                  if (event.properties.status.type !== "idle") {
+                    continue;
+                  }
+
+                  break;
+                }
+                default: {
+                  continue;
+                }
+              }
+
+              break;
+            }
+          } catch (error) {
+            if (turnAbort.signal.aborted) {
+              return;
+            }
+
+            throw error;
+          }
+        })();
+
+        const promptTask = ready.runtime.client.session
+          .promptAsync({
+            throwOnError: true,
+            path: { id: ready.sessionId },
+            body: {
+              parts: [{ type: "text", text: input }],
+            },
+            signal: turnAbort.signal,
+          })
+          .catch((error) => {
+            if (!turnAbort.signal.aborted) {
+              turnAbort.abort("Prompt request failed.");
+            }
+
+            throw error;
+          });
+
+        await Promise.all([streamTask, promptTask]);
+
+        if (thinkingVisible) {
+          clearCurrentLine();
+        }
+
+        if (turnAbort.signal.aborted) {
+          try {
+            await ready.runtime.client.session.abort({
+              throwOnError: true,
+              path: { id: ready.sessionId },
+            });
+          } catch {
+            // Ignore abort failures after local interruption.
+          }
+
+          if (assistantStarted) {
+            process.stdout.write("\n");
+          }
+          console.log("Interrupted.");
+          continue;
+        }
+
+        if (streamError) {
+          if (assistantStarted) {
+            process.stdout.write("\n");
+          }
+          console.error(`[agent] chat error: ${streamError}`);
+          continue;
+        }
+
+        if (!assistantHasText) {
           console.log(`${assistantPrompt} (no text response)`);
           continue;
         }
 
-        console.log(`${assistantPrompt} ${assistantText}`);
+        process.stdout.write("\n");
       } catch (error) {
-        process.stdout.write("\r\u001b[2K");
+        clearCurrentLine();
+        if (currentAbort?.signal.aborted) {
+          console.log("Interrupted.");
+          continue;
+        }
+
         const message = explainStartupError(error);
         console.error(`[agent] chat error: ${message}`);
+      } finally {
+        currentAbort = null;
       }
     }
   } finally {
