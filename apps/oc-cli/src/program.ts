@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { Command } from "commander";
 import { registerChatCommand } from "./commands/chat";
 import { registerStartCommand } from "./commands/start";
+import { registerToolsCommand } from "./commands/tools";
 
 type PackageJson = {
   version?: string;
@@ -21,6 +22,7 @@ export function buildProgram(): Command {
 
   registerStartCommand(program);
   registerChatCommand(program);
+  registerToolsCommand(program);
 
   return program;
 }

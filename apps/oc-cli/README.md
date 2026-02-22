@@ -25,6 +25,8 @@ From repo root:
 - `bun run oc-cli chat`
 - `bun run oc-cli chat --verbose`
 - `bun run oc-cli chat --smoke`
+- `bun run oc-cli tools`
+- `bun run oc-cli tools --expect read`
 
 From `apps/oc-cli`:
 
@@ -35,6 +37,8 @@ From `apps/oc-cli`:
 - `bun run src/index.ts chat`
 - `bun run src/index.ts chat --verbose`
 - `bun run src/index.ts chat --smoke`
+- `bun run src/index.ts tools`
+- `bun run src/index.ts tools --expect read`
 
 After linking/installing package bin:
 
@@ -44,6 +48,8 @@ After linking/installing package bin:
 - `oc-cli chat`
 - `oc-cli chat --verbose`
 - `oc-cli chat --smoke`
+- `oc-cli tools`
+- `oc-cli tools --expect read`
 
 ## Chat
 
@@ -70,6 +76,20 @@ REPL commands:
 - `/clear` Start a fresh session
 - `/exit` Exit chat
 - `/quit` Exit chat
+
+## Tools
+
+Quickly verify OpenCode tool registration:
+
+- `bun run oc-cli tools`
+- `bun run oc-cli tools --expect my_custom_tool`
+- `bun run oc-cli tools --provider anthropic --model claude-sonnet-4-5`
+
+Behavior:
+
+- Lists all registered tool IDs from the running OpenCode runtime.
+- Exits with code `1` if any `--expect` tool ID is missing.
+- Also checks tool schema resolution using `tool.list` (provider/model-specific).
 
 ## Parsing behavior
 
