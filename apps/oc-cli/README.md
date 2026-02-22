@@ -6,6 +6,7 @@ Standalone Bun-native CLI app in the Finny Turborepo.
 
 - `opencode` must be available on `PATH` (for example via `npm i -g opencode-ai`).
 - Configure at least one model/provider in OpenCode before using `chat`.
+- `ALPACA_API_KEY` and `ALPACA_API_SECRET` must be set to use Alpaca custom tools.
 
 ## Commands
 
@@ -39,6 +40,7 @@ From `apps/oc-cli`:
 - `bun run src/index.ts chat --smoke`
 - `bun run src/index.ts tools`
 - `bun run src/index.ts tools --expect read`
+- `bun run src/index.ts tools --expect alpaca_price --expect alpaca_options`
 
 After linking/installing package bin:
 
@@ -50,6 +52,7 @@ After linking/installing package bin:
 - `oc-cli chat --smoke`
 - `oc-cli tools`
 - `oc-cli tools --expect read`
+- `oc-cli tools --expect alpaca_price --expect alpaca_options`
 
 ## Chat
 
@@ -90,6 +93,11 @@ Behavior:
 - Lists all registered tool IDs from the running OpenCode runtime.
 - Exits with code `1` if any `--expect` tool ID is missing.
 - Also checks tool schema resolution using `tool.list` (provider/model-specific).
+
+`oc-cli` includes project-local custom tools in `apps/oc-cli/.opencode/tools`:
+
+- `alpaca_price` for latest stock prices
+- `alpaca_options` for option chain snapshots
 
 ## Parsing behavior
 
