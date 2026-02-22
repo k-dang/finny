@@ -1,7 +1,7 @@
 import { gateway, stepCountIs, ToolLoopAgent } from "ai";
-import { alpacaTools } from "./tools/alpaca";
-import { ibkrTools } from "./tools/ibkr";
-import { polymarketTools } from "./tools/polymarket";
+import { alpacaTools } from "@/chat/tools/alpaca";
+import { ibkrTools } from "@/chat/tools/ibkr";
+import { polymarketTools } from "@/chat/tools/polymarket";
 
 export const agent = new ToolLoopAgent({
   model: gateway("moonshotai/kimi-k2.5"),

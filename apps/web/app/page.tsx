@@ -1,6 +1,6 @@
 import Image, { type ImageProps } from "next/image";
-import { AlertButton } from "./components/alert-button";
-import styles from "./page.module.css";
+import { AlertButton } from "@/components/alert-button";
+import styles from "@/page.module.css";
 
 type Props = Omit<ImageProps, "src"> & {
   srcLight: string;

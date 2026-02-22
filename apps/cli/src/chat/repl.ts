@@ -1,7 +1,7 @@
 import { createInterface } from "node:readline/promises";
 import { type ModelMessage } from "ai";
-import { agent } from "./agent";
-import { createEventRenderer } from "./eventRenderer";
+import { agent } from "@/chat/agent";
+import { createEventRenderer } from "@/chat/eventRenderer";
 
 type RunChatOptions = {
   verbose?: boolean;

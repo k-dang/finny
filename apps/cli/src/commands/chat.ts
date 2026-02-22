@@ -1,5 +1,5 @@
 import type { Command } from "commander";
-import { runChat, runChatSmoke } from "../chat/repl";
+import { runChat, runChatSmoke } from "@/chat/repl";
 
 export function registerChatCommand(program: Command): void {
   program

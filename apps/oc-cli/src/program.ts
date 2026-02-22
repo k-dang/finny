@@ -2,9 +2,9 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Command } from "commander";
-import { registerChatCommand } from "./commands/chat";
-import { registerStartCommand } from "./commands/start";
-import { registerToolsCommand } from "./commands/tools";
+import { registerChatCommand } from "@/commands/chat";
+import { registerStartCommand } from "@/commands/start";
+import { registerToolsCommand } from "@/commands/tools";
 
 type PackageJson = {
   version?: string;

@@ -2,10 +2,10 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Command } from "commander";
-import { registerAlpacaCommand } from "./commands/alpaca";
-import { registerChatCommand } from "./commands/chat";
-import { registerIbkrCommand } from "./commands/ibkr";
-import { registerPolymarketCommand } from "./commands/polymarket";
+import { registerAlpacaCommand } from "@/commands/alpaca";
+import { registerChatCommand } from "@/commands/chat";
+import { registerIbkrCommand } from "@/commands/ibkr";
+import { registerPolymarketCommand } from "@/commands/polymarket";
 
 type PackageJson = {
   version?: string;
