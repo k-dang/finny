@@ -41,6 +41,7 @@ From `apps/oc-cli`:
 - `bun run src/index.ts tools`
 - `bun run src/index.ts tools --expect read`
 - `bun run src/index.ts tools --expect alpaca_price --expect alpaca_options`
+- `bun run src/index.ts tools --expect polymarket_active_events --expect polymarket_markets`
 
 After linking/installing package bin:
 
@@ -53,6 +54,7 @@ After linking/installing package bin:
 - `oc-cli tools`
 - `oc-cli tools --expect read`
 - `oc-cli tools --expect alpaca_price --expect alpaca_options`
+- `oc-cli tools --expect polymarket_active_events --expect polymarket_markets`
 
 ## Chat
 
@@ -98,6 +100,8 @@ Behavior:
 
 - `alpaca_price` for latest stock prices
 - `alpaca_options` for option chain snapshots
+- `polymarket_active_events` for active event discovery
+- `polymarket_markets` for market-level snapshots and filters
 
 ## Parsing behavior
 
