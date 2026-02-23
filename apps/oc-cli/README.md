@@ -7,6 +7,7 @@ Standalone Bun-native CLI app in the Finny Turborepo.
 - `opencode` must be available on `PATH` (for example via `npm i -g opencode-ai`).
 - Configure at least one model/provider in OpenCode before using `chat`.
 - `ALPACA_API_KEY` and `ALPACA_API_SECRET` must be set to use Alpaca custom tools.
+- IBKR custom tools require the IBKR Client Portal Gateway running locally (default `https://localhost:5000`).
 
 ## Commands
 
@@ -100,6 +101,8 @@ Behavior:
 
 - `alpaca_price` for latest stock prices
 - `alpaca_options` for option chain snapshots
+- `ibkr_list_accounts` to list available IBKR account IDs
+- `ibkr_portfolio_snapshot` for read-only IBKR account summary and optional positions
 - `polymarket_active_events` for active event discovery
 - `polymarket_markets` for market-level snapshots and filters
 
