@@ -27,6 +27,7 @@
     "@repo/alpaca": "workspace:*",
     "@repo/ibkr": "workspace:*",
     "@repo/polymarket": "workspace:*",
+    "@opencode-ai/plugin": "^1.2.10",
     "@opencode-ai/sdk": "^1.2.10",
     "commander": "^14.0.3"
   }
