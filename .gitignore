@@ -42,3 +42,6 @@ clientportal.gw
 
 # opensrc - source code for packages
 opensrc/
+
+# Finny local caches and traces
+.finny/

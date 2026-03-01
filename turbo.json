@@ -9,7 +9,12 @@
     },
     "lint": {
       "dependsOn": ["^lint"],
-      "env": ["AI_GATEWAY_API_KEY", "ALPACA_API_KEY", "ALPACA_API_SECRET"]
+      "env": [
+        "AI_GATEWAY_API_KEY",
+        "ALPACA_API_KEY",
+        "ALPACA_API_SECRET",
+        "FMP_API_KEY"
+      ]
     },
     "check-types": {
       "dependsOn": ["^check-types"]
@@ -21,7 +26,12 @@
     "dev": {
       "cache": false,
       "persistent": true,
-      "env": ["AI_GATEWAY_API_KEY", "ALPACA_API_KEY", "ALPACA_API_SECRET"]
+      "env": [
+        "AI_GATEWAY_API_KEY",
+        "ALPACA_API_KEY",
+        "ALPACA_API_SECRET",
+        "FMP_API_KEY"
+      ]
     }
   }
 }

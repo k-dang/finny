@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "@repo/alpaca": "workspace:*",
+    "@repo/finance-core": "workspace:*",
     "@repo/ibkr": "workspace:*",
     "@repo/polymarket": "workspace:*",
     "ai": "^6.0.78",

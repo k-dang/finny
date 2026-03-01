@@ -1,5 +1,6 @@
 import { gateway, stepCountIs, ToolLoopAgent } from "ai";
 import { alpacaTools } from "@/chat/tools/alpaca";
+import { financialTools } from "@/chat/tools/financial";
 import { ibkrTools } from "@/chat/tools/ibkr";
 import { polymarketTools } from "@/chat/tools/polymarket";
 
@@ -17,9 +18,11 @@ How you respond:
 - End recommendations with a clear action and key caveats.
 - If market data is missing, state assumptions explicitly.
 - For stock quotes and option chains, use alpaca_price and alpaca_options.
+- For broad multi-part financial research, compose one or more financial_* tools and synthesize results with provenance cues.
 - For read-only IBKR account snapshots: call ibkr_list_accounts first when the account is unknown, then ibkr_portfolio_snapshot with the chosen accountId.
 - For current Polymarket event discovery, call polymarket_active_events.
 - For Polymarket market-level data, call polymarket_markets.
+- For writing text files inside apps/cli, use write_file with a relative path.
 - Before running non-trivial commands, briefly state intent and favor read-only inspection first.
 
 Safety:
@@ -29,6 +32,7 @@ Safety:
 `,
   stopWhen: stepCountIs(8),
   tools: {
+    ...financialTools,
     ...alpacaTools,
     ...ibkrTools,
     ...polymarketTools,

@@ -5,7 +5,8 @@ Finny is a Bun-native finance-focused CLI app.
 ## Requirements
 
 - `AI_GATEWAY_API_KEY` must be set for `chat`.
-- `ALPACA_API_KEY` and `ALPACA_API_SECRET` must be set for `alpaca` and Alpaca-backed chat tools.
+- `ALPACA_API_KEY` and `ALPACA_API_SECRET` must be set for `alpaca`, `alpaca_price`, and `alpaca_options`.
+- `FMP_API_KEY` must be set for FMP-backed finance tools (`financial_fundamentals`, `financial_ratios`, `financial_estimates`, `financial_insider_trades`, `financial_segments`).
 - IBKR chat snapshots require IBKR Client Portal Gateway running locally (default `https://localhost:5000`).
 
 Start the gateway from repo root:
@@ -127,6 +128,16 @@ Chat has access to:
 - `ibkr_portfolio_snapshot` for read-only IBKR account summary and optional positions (requires accountId; call `ibkr_list_accounts` first when unknown)
 - `polymarket_active_events` for current active Polymarket events with optional filters
 - `polymarket_markets` for raw Polymarket market snapshots with pricing and momentum fields
+- `financial_fundamentals` for statements data from FMP
+- `financial_ratios` for valuation/quality ratio history from FMP
+- `financial_estimates` for analyst estimates from FMP
+- `financial_insider_trades` for insider activity records from FMP
+- `financial_segments` for segment revenue history from FMP
+- `financial_filings_list` for recent SEC filings metadata
+- `financial_filing_read_items` for SEC filing section extraction by accession number
+- `write_file` for writing text files under `apps/cli` with `overwrite` or `append` mode
+
+Financial tool responses use a uniform shape with `data`, `error`, optional `message`, and source `provenance` metadata.
 
 ## Parsing behavior
 
