@@ -3,6 +3,9 @@ import { alpacaTools } from "@/chat/tools/alpaca";
 import { financialTools } from "@/chat/tools/financial";
 import { ibkrTools } from "@/chat/tools/ibkr";
 import { polymarketTools } from "@/chat/tools/polymarket";
+import { createBashTool } from "bash-tool";
+
+const { tools } = await createBashTool();
 
 export const agent = new ToolLoopAgent({
   model: gateway("moonshotai/kimi-k2.5"),
@@ -30,11 +33,13 @@ Safety:
 - Do not imply guaranteed returns.
 - Highlight material risks before upside.
 `,
-  stopWhen: stepCountIs(8),
+  stopWhen: stepCountIs(10),
   tools: {
     ...financialTools,
     ...alpacaTools,
     ...ibkrTools,
     ...polymarketTools,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- bash-tool Tool types cause ToolSet mismatch
+    ...tools as any,
   },
 });
