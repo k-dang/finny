@@ -55,6 +55,7 @@ const ANSI_CODES: Record<AnsiStyle, string> = {
 };
 
 const ANSI_RESET = "\u001b[0m";
+
 const MAX_PREVIEW_LENGTH = 180;
 
 export function createEventRenderer(options: EventRendererOptions = {}) {

@@ -56,7 +56,7 @@ After linking/installing the package bin:
 
 ## Chat
 
-Start an interactive chat session:
+Start an interactive OpenTUI chat session:
 
 From repo root (preserves stdin/TTY for REPL input):
 
@@ -70,6 +70,8 @@ From `apps/cli`:
 - `cli chat`
 - `cli chat --verbose`
 - `cli chat --smoke`
+
+`chat` now launches a full-screen terminal UI. It requires a TTY-enabled session.
 
 ## Alpaca quick checks
 
@@ -117,8 +119,16 @@ REPL commands:
 - `/exit` Exit chat
 - `/quit` Exit chat
 
+TUI controls:
+
+- `Tab` Switch focus between the composer and transcript
+- `Ctrl+C` Abort the active response, or press twice while idle to exit
+- `Ctrl+L` Clear conversation history
+- `Ctrl+R` Retry the last input
+- `Ctrl+U` Undo the most recent completed turn
+
 By default, chat runs in a clean output mode. Use `--verbose` or `/verbose on`
-to show step and tool traces.
+to show step and tool traces in the trace pane.
 
 Chat has access to:
 

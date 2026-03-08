@@ -38,7 +38,7 @@ Optional from repo root:
 - Keep `src/index.ts` minimal; place command behavior in `src/commands` and runtime logic in focused modules.
 - Keep `chat` output clean by default; reserve step/tool telemetry for explicit verbose mode (`--verbose` or `/verbose on`).
 - Keep command output machine-readable JSON by default for data commands; gate diagnostics behind explicit flags (for example `--trace`).
-- In TTY mode, keep REPL role prompts visually distinct (`user>` vs `assistant>`); keep non-TTY output plain text.
+- In TTY mode, keep `chat` as a focused terminal UI with a transcript pane, composer, and optional verbose trace pane; keep non-TTY failures plain text.
 - Keep finance tooling primitive-first via granular `financial_*` tools; let the LLM decide composition while preserving explicit provenance and a uniform `data`/`error`/`message` output shape.
 - When changing behavior, update `README.md` and this file's behavior contract in the same change.
 
