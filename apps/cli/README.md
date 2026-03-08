@@ -114,7 +114,6 @@ REPL commands:
 - `/status` Show turn, message, and verbosity state
 - `/verbose on|off` Toggle step and tool traces while running
 - `/undo` Remove the most recent completed turn (multi-level)
-- `/retry` Retry the last input
 - `/clear` Clear in-memory conversation history
 - `/exit` Exit chat
 - `/quit` Exit chat
@@ -124,11 +123,10 @@ TUI controls:
 - `Tab` Switch focus between the composer and transcript
 - `Ctrl+C` Abort the active response, or press twice while idle to exit
 - `Ctrl+L` Clear conversation history
-- `Ctrl+R` Retry the last input
 - `Ctrl+U` Undo the most recent completed turn
 
 By default, chat runs in a clean output mode. Use `--verbose` or `/verbose on`
-to show step and tool traces in the trace pane.
+to show step and tool traces in the right-hand trace pane.
 
 Chat has access to:
 

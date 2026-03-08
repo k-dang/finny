@@ -152,12 +152,6 @@ function ChatApp({ initialVerbose, onExit }: ChatAppProps) {
       return;
     }
 
-    if (key.ctrl && key.name === "r") {
-      void session.retry();
-      setDraft("");
-      return;
-    }
-
     if (key.ctrl && key.name === "u") {
       session.undo();
     }
@@ -203,56 +197,25 @@ function ChatApp({ initialVerbose, onExit }: ChatAppProps) {
       </box>
 
       <box style={{ flexDirection: "column", flexGrow: 1 }}>
-        <scrollbox
-          ref={transcriptRef}
-          title="Conversation"
-          border
-          borderColor={BORDER}
-          stickyScroll
-          stickyStart="bottom"
-          focused={focusTarget === "transcript"}
+        <box
           style={{
-            backgroundColor: PANEL,
+            flexDirection: "row",
             flexGrow: 1,
             marginBottom: 1,
-            paddingTop: 1,
-            paddingBottom: 1,
-            paddingLeft: 1,
-            paddingRight: 1,
           }}
         >
-          <box style={{ flexDirection: "column", width: "100%" }}>
-            {snapshot.entries.map((entry: ChatEntry) => (
-              <EntryCard key={entry.id} entry={entry} />
-            ))}
-            {snapshot.isStreaming && !hasPendingAssistant(snapshot.entries) ? (
-              <box
-                border
-                borderColor={BORDER}
-                style={{
-                  backgroundColor: PANEL_ALT,
-                  marginBottom: 1,
-                  paddingLeft: 1,
-                  paddingRight: 1,
-                }}
-              >
-                <text content="assistant> thinking..." style={{ fg: MUTED }} />
-              </box>
-            ) : null}
-          </box>
-        </scrollbox>
-
-        {snapshot.verbose ? (
           <scrollbox
-            title="Trace"
+            ref={transcriptRef}
+            title="Conversation"
             border
             borderColor={BORDER}
             stickyScroll
             stickyStart="bottom"
+            focused={focusTarget === "transcript"}
             style={{
-              backgroundColor: PANEL_ALT,
-              height: 10,
-              marginBottom: 1,
+              backgroundColor: PANEL,
+              flexGrow: 1,
+              marginRight: snapshot.verbose ? 1 : 0,
               paddingTop: 1,
               paddingBottom: 1,
               paddingLeft: 1,
@@ -260,16 +223,59 @@ function ChatApp({ initialVerbose, onExit }: ChatAppProps) {
             }}
           >
             <box style={{ flexDirection: "column", width: "100%" }}>
-              {snapshot.traces.length === 0 ? (
-                <text content="No trace events yet." style={{ fg: MUTED }} />
-              ) : (
-                snapshot.traces.map((trace: TraceEntry) => (
-                  <TraceCard key={trace.id} trace={trace} />
-                ))
-              )}
+              {snapshot.entries.map((entry: ChatEntry) => (
+                <EntryCard key={entry.id} entry={entry} />
+              ))}
+              {snapshot.isStreaming &&
+              !hasPendingAssistant(snapshot.entries) ? (
+                <box
+                  border
+                  borderColor={BORDER}
+                  style={{
+                    backgroundColor: PANEL_ALT,
+                    marginBottom: 1,
+                    paddingLeft: 1,
+                    paddingRight: 1,
+                  }}
+                >
+                  <text
+                    content="assistant> thinking..."
+                    style={{ fg: MUTED }}
+                  />
+                </box>
+              ) : null}
             </box>
           </scrollbox>
-        ) : null}
+
+          {snapshot.verbose ? (
+            <scrollbox
+              title="Trace"
+              border
+              borderColor={BORDER}
+              stickyScroll
+              stickyStart="bottom"
+              style={{
+                backgroundColor: PANEL_ALT,
+                flexShrink: 0,
+                width: 42,
+                paddingTop: 1,
+                paddingBottom: 1,
+                paddingLeft: 1,
+                paddingRight: 1,
+              }}
+            >
+              <box style={{ flexDirection: "column", width: "100%" }}>
+                {snapshot.traces.length === 0 ? (
+                  <text content="No trace events yet." style={{ fg: MUTED }} />
+                ) : (
+                  snapshot.traces.map((trace: TraceEntry) => (
+                    <TraceCard key={trace.id} trace={trace} />
+                  ))
+                )}
+              </box>
+            </scrollbox>
+          ) : null}
+        </box>
 
         <box
           title={snapshot.isStreaming ? "Composer (busy)" : "Composer"}
@@ -278,6 +284,7 @@ function ChatApp({ initialVerbose, onExit }: ChatAppProps) {
           style={{
             backgroundColor: PANEL,
             flexDirection: "column",
+            flexShrink: 0,
             paddingLeft: 1,
             paddingRight: 1,
           }}
@@ -301,7 +308,7 @@ function ChatApp({ initialVerbose, onExit }: ChatAppProps) {
             content={
               exitArmed
                 ? "Press Ctrl+C again to exit."
-                : "Shortcuts: Tab focus  Ctrl+L clear  Ctrl+R retry  Ctrl+U undo"
+                : "Shortcuts: Tab focus  Ctrl+L clear  Ctrl+U undo"
             }
             style={{ fg: exitArmed ? ERROR : MUTED, bg: PANEL }}
           />

@@ -27,7 +27,6 @@ export type TraceEntry = {
 export type ChatSessionSnapshot = {
   entries: ChatEntry[];
   isStreaming: boolean;
-  lastRetriableInput: string | null;
   messageCount: number;
   turnCount: number;
   traces: TraceEntry[];
@@ -48,7 +47,6 @@ const COMMAND_HELP = [
   "  /status          Show current chat status",
   "  /verbose on|off  Toggle step and tool traces",
   "  /undo            Remove the most recent completed turn",
-  "  /retry           Retry the last input",
   "  /clear           Clear conversation history",
   "  /exit            Exit chat",
   "  /quit            Exit chat",
@@ -63,7 +61,6 @@ export class ChatSession {
   private turnHistory: CompletedTurn[] = [];
   private listeners = new Set<(snapshot: ChatSessionSnapshot) => void>();
   private currentAbort: AbortController | null = null;
-  private lastRetriableInput: string | null = null;
   private verbose: boolean;
   private nextId = 0;
 
@@ -88,7 +85,6 @@ export class ChatSession {
     return {
       entries: [...this.entries],
       isStreaming: this.currentAbort !== null,
-      lastRetriableInput: this.lastRetriableInput,
       messageCount: this.messages.length,
       turnCount: this.turnHistory.length,
       traces: [...this.traces],
@@ -110,29 +106,6 @@ export class ChatSession {
     return { type: "submitted" };
   }
 
-  async retry(): Promise<void> {
-    if (this.currentAbort) {
-      return;
-    }
-
-    const removedTurn = this.turnHistory.pop();
-    if (removedTurn) {
-      this.messages.length = removedTurn.messageStartIndex;
-      this.entries.length = removedTurn.entryStartIndex;
-      this.traces.length = removedTurn.traceStartIndex;
-      this.lastRetriableInput = removedTurn.userInput;
-      this.emit();
-    }
-
-    if (!this.lastRetriableInput) {
-      this.pushEntry("system", "Nothing to retry.");
-      return;
-    }
-
-    this.pushEntry("system", "Retrying last input...");
-    await this.runTurn(this.lastRetriableInput);
-  }
-
   undo(): void {
     if (this.currentAbort) {
       return;
@@ -147,7 +120,6 @@ export class ChatSession {
     this.messages.length = removedTurn.messageStartIndex;
     this.entries.length = removedTurn.entryStartIndex;
     this.traces.length = removedTurn.traceStartIndex;
-    this.lastRetriableInput = removedTurn.userInput;
 
     const remainingTurns = this.turnHistory.length;
     const turnLabel = remainingTurns === 1 ? "turn" : "turns";
@@ -167,7 +139,6 @@ export class ChatSession {
     this.turnHistory = [];
     this.entries = [];
     this.traces = [];
-    this.lastRetriableInput = null;
     this.pushEntry("system", "Cleared conversation history.");
   }
 
@@ -234,11 +205,6 @@ export class ChatSession {
       return { type: "handled" };
     }
 
-    if (input === "/retry") {
-      await this.retry();
-      return { type: "handled" };
-    }
-
     this.pushEntry("system", "Unknown command. Type /help for commands.");
     return { type: "handled" };
   }
@@ -247,7 +213,6 @@ export class ChatSession {
     const messageStartIndex = this.messages.length;
     const entryStartIndex = this.entries.length;
     const traceStartIndex = this.traces.length;
-    this.lastRetriableInput = input;
 
     this.messages.push({
       role: "user",
