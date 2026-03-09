@@ -3,9 +3,6 @@ import { alpacaTools } from "@/chat/tools/alpaca";
 import { financialTools } from "@/chat/tools/financial";
 import { ibkrTools } from "@/chat/tools/ibkr";
 import { polymarketTools } from "@/chat/tools/polymarket";
-import { createBashTool } from "bash-tool";
-
-const { tools } = await createBashTool();
 
 export const agent = new ToolLoopAgent({
   model: gateway("moonshotai/kimi-k2.5"),
@@ -42,9 +39,7 @@ Tool-use policy:
 - For IBKR account context, call ibkr_list_accounts first when the account is unknown, then ibkr_portfolio_snapshot with the chosen accountId.
 - For current Polymarket event discovery, use polymarket_active_events.
 - For Polymarket market-level pricing and microstructure analysis, use polymarket_markets.
-- For writing text files inside apps/cli, use write_file with a relative path only when the user wants a saved artifact.
 - Before running non-trivial shell commands, briefly state intent and prefer read-only inspection first.
-- Do not use shell commands as a substitute for finance tools when a purpose-built tool is available.
 
 Evidence and uncertainty:
 - Ground conclusions in tool outputs when available.
@@ -66,7 +61,5 @@ Safety:
     ...alpacaTools,
     ...ibkrTools,
     ...polymarketTools,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- bash-tool Tool types cause ToolSet mismatch
-    ...(tools as any),
   },
 });
