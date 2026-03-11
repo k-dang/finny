@@ -1,10 +1,8 @@
-import type { ScrollBoxRenderable } from "@opentui/core";
 import { createCliRenderer } from "@opentui/core";
-import { createRoot, flushSync, useKeyboard } from "@opentui/react";
+import { createRoot, useKeyboard } from "@opentui/react";
 import {
   useEffect,
   useMemo,
-  useRef,
   useState,
   type Dispatch,
   type SetStateAction,
@@ -76,7 +74,6 @@ function ChatApp({ initialVerbose, onExit }: ChatAppProps) {
   const [draft, setDraft] = useState("");
   const [focusTarget, setFocusTarget] = useState<FocusTarget>("composer");
   const [exitArmed, setExitArmed] = useState(false);
-  const transcriptRef = useRef<ScrollBoxRenderable | null>(null);
 
   useEffect(() => session.subscribe(setSnapshot), [session]);
 
@@ -93,16 +90,6 @@ function ChatApp({ initialVerbose, onExit }: ChatAppProps) {
     }
   }, [snapshot.isStreaming]);
 
-  useEffect(() => {
-    if (focusTarget !== "composer") {
-      return;
-    }
-
-    flushSync(() => {
-      transcriptRef.current?.scrollTo(transcriptRef.current.scrollHeight);
-    });
-  }, [focusTarget, snapshot.entries.length, snapshot.traces.length]);
-
   const submitDraft = async (value: string) => {
     if (snapshot.isStreaming) {
       return;
@@ -116,7 +103,7 @@ function ChatApp({ initialVerbose, onExit }: ChatAppProps) {
       return;
     }
 
-    setFocusTarget(snapshot.isStreaming ? "transcript" : "composer");
+    setFocusTarget("composer");
   };
 
   useKeyboard((key) => {
@@ -152,9 +139,6 @@ function ChatApp({ initialVerbose, onExit }: ChatAppProps) {
       return;
     }
 
-    if (key.ctrl && key.name === "u") {
-      session.undo();
-    }
   });
 
   const statusTone = snapshot.isStreaming ? ASSISTANT : SYSTEM;
@@ -205,7 +189,6 @@ function ChatApp({ initialVerbose, onExit }: ChatAppProps) {
           }}
         >
           <scrollbox
-            ref={transcriptRef}
             title="Conversation"
             border
             borderColor={BORDER}
@@ -308,7 +291,7 @@ function ChatApp({ initialVerbose, onExit }: ChatAppProps) {
             content={
               exitArmed
                 ? "Press Ctrl+C again to exit."
-                : "Shortcuts: Tab focus  Ctrl+L clear  Ctrl+U undo"
+                : "Shortcuts: Tab focus  Ctrl+L clear  /undo"
             }
             style={{ fg: exitArmed ? ERROR : MUTED, bg: PANEL }}
           />
