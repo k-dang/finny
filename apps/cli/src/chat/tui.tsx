@@ -161,6 +161,7 @@ function ChatApp({ initialVerbose, onExit }: ChatAppProps) {
         style={{
           backgroundColor: PANEL,
           flexDirection: "column",
+          flexShrink: 0,
           marginBottom: 1,
           paddingLeft: 1,
           paddingRight: 1,
