@@ -21,6 +21,7 @@ type ChatAppProps = {
 
 type FocusTarget = "composer" | "transcript";
 
+const STARTUP_INPUT_GUARD_MS = 120;
 const BACKGROUND = "#06131f";
 const PANEL = "#0d1b2a";
 const PANEL_ALT = "#13263a";
@@ -72,6 +73,7 @@ function ChatApp({ initialVerbose, onExit }: ChatAppProps) {
     session.snapshot(),
   );
   const [draft, setDraft] = useState("");
+  const [composerArmed, setComposerArmed] = useState(false);
   const [focusTarget, setFocusTarget] = useState<FocusTarget>("composer");
   const [exitArmed, setExitArmed] = useState(false);
 
@@ -82,6 +84,19 @@ function ChatApp({ initialVerbose, onExit }: ChatAppProps) {
       void session.dispose();
     };
   }, [session]);
+
+  useEffect(() => {
+    // Give the terminal a moment to flush the launching command's buffered
+    // keystrokes before the composer starts accepting input.
+    const timer = setTimeout(() => {
+      setDraft("");
+      setComposerArmed(true);
+    }, STARTUP_INPUT_GUARD_MS);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, []);
 
   useEffect(() => {
     if (snapshot.isStreaming) {
@@ -274,16 +289,24 @@ function ChatApp({ initialVerbose, onExit }: ChatAppProps) {
           }}
         >
           <input
-            focused={!snapshot.isStreaming && focusTarget === "composer"}
+            focused={
+              composerArmed &&
+              !snapshot.isStreaming &&
+              focusTarget === "composer"
+            }
             value={draft}
             placeholder={
               snapshot.isStreaming
                 ? "Assistant is responding..."
                 : "Ask Finny anything, or use /help"
             }
-            onInput={setDraft}
+            onInput={(value) => {
+              if (composerArmed) {
+                setDraft(value);
+              }
+            }}
             onSubmit={(value) => {
-              if (typeof value === "string") {
+              if (composerArmed && typeof value === "string") {
                 void submitDraft(value);
               }
             }}
