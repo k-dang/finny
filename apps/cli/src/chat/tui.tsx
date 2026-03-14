@@ -1,37 +1,24 @@
 import { createCliRenderer } from "@opentui/core";
-import { createRoot, useKeyboard } from "@opentui/react";
+import { createRoot } from "@opentui/react";
+import { useEffect, useState } from "react";
+import { type ChatEntry } from "@/chat/session";
+import { ChatHeader } from "@/chat/tui/components/ChatHeader";
+import { ComposerPane } from "@/chat/tui/components/ComposerPane";
+import { ConversationPane } from "@/chat/tui/components/ConversationPane";
+import { TracePane } from "@/chat/tui/components/TracePane";
 import {
-  useEffect,
-  useMemo,
-  useState,
-  type Dispatch,
-  type SetStateAction,
-} from "react";
-import {
-  ChatSession,
-  type ChatEntry,
-  type ChatSessionSnapshot,
-  type TraceEntry,
-} from "@/chat/session";
+  BACKGROUND,
+  type FocusTarget,
+  styles,
+} from "@/chat/tui/theme";
+import { useChatKeyboard } from "@/chat/tui/useChatKeyboard";
+import { useChatSession } from "@/chat/tui/useChatSession";
+import { useComposerGuard } from "@/chat/tui/useComposerGuard";
 
 type ChatAppProps = {
   initialVerbose: boolean;
   onExit: () => void;
 };
-
-type FocusTarget = "composer" | "transcript";
-
-const STARTUP_INPUT_GUARD_MS = 120;
-const BACKGROUND = "#06131f";
-const PANEL = "#0d1b2a";
-const PANEL_ALT = "#13263a";
-const BORDER = "#284b63";
-const TEXT = "#d8e7f3";
-const MUTED = "#7e9bb2";
-const USER = "#81c7d4";
-const ASSISTANT = "#a3e635";
-const SYSTEM = "#facc15";
-const ERROR = "#f87171";
 
 export async function runChatTui(
   options: { verbose?: boolean } = {},
@@ -65,38 +52,11 @@ export async function runChatTui(
 }
 
 function ChatApp({ initialVerbose, onExit }: ChatAppProps) {
-  const session = useMemo(
-    () => new ChatSession({ verbose: initialVerbose }),
-    [initialVerbose],
-  );
-  const [snapshot, setSnapshot] = useState<ChatSessionSnapshot>(
-    session.snapshot(),
-  );
+  const { session, snapshot } = useChatSession(initialVerbose);
   const [draft, setDraft] = useState("");
-  const [composerArmed, setComposerArmed] = useState(false);
+  const composerArmed = useComposerGuard();
   const [focusTarget, setFocusTarget] = useState<FocusTarget>("composer");
   const [exitArmed, setExitArmed] = useState(false);
-
-  useEffect(() => session.subscribe(setSnapshot), [session]);
-
-  useEffect(() => {
-    return () => {
-      void session.dispose();
-    };
-  }, [session]);
-
-  useEffect(() => {
-    // Give the terminal a moment to flush the launching command's buffered
-    // keystrokes before the composer starts accepting input.
-    const timer = setTimeout(() => {
-      setDraft("");
-      setComposerArmed(true);
-    }, STARTUP_INPUT_GUARD_MS);
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, []);
 
   useEffect(() => {
     if (snapshot.isStreaming) {
@@ -104,6 +64,16 @@ function ChatApp({ initialVerbose, onExit }: ChatAppProps) {
       setExitArmed(false);
     }
   }, [snapshot.isStreaming]);
+
+  useChatKeyboard({
+    session,
+    isStreaming: snapshot.isStreaming,
+    exitArmed,
+    setExitArmed,
+    setFocusTarget,
+    setDraft,
+    onExit,
+  });
 
   const submitDraft = async (value: string) => {
     if (snapshot.isStreaming) {
@@ -121,80 +91,20 @@ function ChatApp({ initialVerbose, onExit }: ChatAppProps) {
     setFocusTarget("composer");
   };
 
-  useKeyboard((key) => {
-    if (key.ctrl && key.name === "c") {
-      void handleInterrupt(
-        session,
-        snapshot.isStreaming,
-        exitArmed,
-        setExitArmed,
-        onExit,
-      );
-      return;
-    }
-
-    if (exitArmed) {
-      setExitArmed(false);
-    }
-
-    if (key.name === "tab" && !snapshot.isStreaming) {
-      setFocusTarget((current: FocusTarget) =>
-        current === "composer" ? "transcript" : "composer",
-      );
-      return;
-    }
-
-    if (snapshot.isStreaming) {
-      return;
-    }
-
-    if (key.ctrl && key.name === "l") {
-      session.clear();
-      setDraft("");
-      return;
-    }
-
-  });
-
-  const statusTone = snapshot.isStreaming ? ASSISTANT : SYSTEM;
   const focusLabel = focusTarget === "composer" ? "composer" : "transcript";
+  const isComposerFocused = focusTarget === "composer";
+  const isTranscriptFocused = focusTarget === "transcript";
+  const showThinkingPlaceholder =
+    snapshot.isStreaming && !hasPendingAssistant(snapshot.entries);
 
   return (
-    <box
-      style={{
-        backgroundColor: BACKGROUND,
-        flexDirection: "column",
-        height: "100%",
-        width: "100%",
-        padding: 1,
-      }}
-    >
-      <box
-        title="Finny Chat"
-        border
-        borderColor={BORDER}
-        style={{
-          backgroundColor: PANEL,
-          flexDirection: "column",
-          flexShrink: 0,
-          marginBottom: 1,
-          paddingLeft: 1,
-          paddingRight: 1,
-        }}
-      >
-        <text
-          content={`Status: ${snapshot.isStreaming ? "streaming" : "idle"}  |  verbose: ${snapshot.verbose ? "on" : "off"}  |  turns: ${snapshot.turnCount}  |  focus: ${focusLabel}`}
-          style={{ fg: statusTone }}
-        />
-        <text
-          content={
-            snapshot.isStreaming
-              ? "Ctrl+C aborts the current response."
-              : "Use /help for commands. Tab switches focus."
-          }
-          style={{ fg: MUTED, bg: PANEL }}
-        />
-      </box>
+    <box style={styles.app}>
+      <ChatHeader
+        focusLabel={focusLabel}
+        isStreaming={snapshot.isStreaming}
+        turnCount={snapshot.turnCount}
+        verbose={snapshot.verbose}
+      />
 
       <box style={{ flexDirection: "column", flexGrow: 1 }}>
         <box
@@ -204,218 +114,33 @@ function ChatApp({ initialVerbose, onExit }: ChatAppProps) {
             marginBottom: 1,
           }}
         >
-          <scrollbox
-            title="Conversation"
-            border
-            borderColor={BORDER}
-            stickyScroll
-            stickyStart="bottom"
-            focused={focusTarget === "transcript"}
-            style={{
-              backgroundColor: PANEL,
-              flexGrow: 1,
-              marginRight: snapshot.verbose ? 1 : 0,
-              paddingTop: 1,
-              paddingBottom: 1,
-              paddingLeft: 1,
-              paddingRight: 1,
-            }}
-          >
-            <box style={{ flexDirection: "column", width: "100%" }}>
-              {snapshot.entries.map((entry: ChatEntry) => (
-                <EntryCard key={entry.id} entry={entry} />
-              ))}
-              {snapshot.isStreaming &&
-              !hasPendingAssistant(snapshot.entries) ? (
-                <box
-                  border
-                  borderColor={BORDER}
-                  style={{
-                    backgroundColor: PANEL_ALT,
-                    marginBottom: 1,
-                    paddingLeft: 1,
-                    paddingRight: 1,
-                  }}
-                >
-                  <text
-                    content="assistant> thinking..."
-                    style={{ fg: MUTED }}
-                  />
-                </box>
-              ) : null}
-            </box>
-          </scrollbox>
+          <ConversationPane
+            entries={snapshot.entries}
+            isStreaming={snapshot.isStreaming}
+            isFocused={isTranscriptFocused}
+            showThinkingPlaceholder={showThinkingPlaceholder}
+            verbose={snapshot.verbose}
+          />
 
-          {snapshot.verbose ? (
-            <scrollbox
-              title="Trace"
-              border
-              borderColor={BORDER}
-              stickyScroll
-              stickyStart="bottom"
-              style={{
-                backgroundColor: PANEL_ALT,
-                flexShrink: 0,
-                width: 42,
-                paddingTop: 1,
-                paddingBottom: 1,
-                paddingLeft: 1,
-                paddingRight: 1,
-              }}
-            >
-              <box style={{ flexDirection: "column", width: "100%" }}>
-                {snapshot.traces.length === 0 ? (
-                  <text content="No trace events yet." style={{ fg: MUTED }} />
-                ) : (
-                  snapshot.traces.map((trace: TraceEntry) => (
-                    <TraceCard key={trace.id} trace={trace} />
-                  ))
-                )}
-              </box>
-            </scrollbox>
-          ) : null}
+          {snapshot.verbose ? <TracePane traces={snapshot.traces} /> : null}
         </box>
 
-        <box
-          title={snapshot.isStreaming ? "Composer (busy)" : "Composer"}
-          border
-          borderColor={BORDER}
-          style={{
-            backgroundColor: PANEL,
-            flexDirection: "column",
-            flexShrink: 0,
-            paddingLeft: 1,
-            paddingRight: 1,
+        <ComposerPane
+          composerArmed={composerArmed}
+          draft={draft}
+          exitArmed={exitArmed}
+          focused={isComposerFocused}
+          isStreaming={snapshot.isStreaming}
+          onDraftChange={setDraft}
+          onSubmit={(value) => {
+            void submitDraft(value);
           }}
-        >
-          <input
-            focused={
-              composerArmed &&
-              !snapshot.isStreaming &&
-              focusTarget === "composer"
-            }
-            value={draft}
-            placeholder={
-              snapshot.isStreaming
-                ? "Assistant is responding..."
-                : "Ask Finny anything, or use /help"
-            }
-            onInput={(value) => {
-              if (composerArmed) {
-                setDraft(value);
-              }
-            }}
-            onSubmit={(value) => {
-              if (composerArmed && typeof value === "string") {
-                void submitDraft(value);
-              }
-            }}
-          />
-          <text
-            content={
-              exitArmed
-                ? "Press Ctrl+C again to exit."
-                : "Shortcuts: Tab focus  Ctrl+L clear  /undo"
-            }
-            style={{ fg: exitArmed ? ERROR : MUTED, bg: PANEL }}
-          />
-        </box>
-      </box>
-    </box>
-  );
-}
-
-function EntryCard({ entry }: { entry: ChatEntry }) {
-  const accent =
-    entry.role === "user"
-      ? USER
-      : entry.role === "assistant"
-        ? ASSISTANT
-        : entry.role === "error"
-          ? ERROR
-          : SYSTEM;
-  const background =
-    entry.role === "user"
-      ? "#102738"
-      : entry.role === "assistant"
-        ? "#15230f"
-        : entry.role === "error"
-          ? "#301317"
-          : PANEL_ALT;
-  const label = `${entry.role}>${entry.pending ? " streaming" : ""}`;
-
-  return (
-    <box
-      border
-      borderColor={BORDER}
-      style={{
-        backgroundColor: background,
-        flexDirection: "column",
-        marginBottom: 1,
-        paddingLeft: 1,
-        paddingRight: 1,
-      }}
-    >
-      <text content={label} style={{ fg: accent }} />
-      <text content={entry.text} style={{ fg: TEXT }} />
-    </box>
-  );
-}
-
-function TraceCard({ trace }: { trace: TraceEntry }) {
-  const tone =
-    trace.tone === "error"
-      ? ERROR
-      : trace.tone === "success"
-        ? ASSISTANT
-        : trace.tone === "warn"
-          ? SYSTEM
-          : MUTED;
-
-  return (
-    <box
-      border
-      borderColor={BORDER}
-      style={{
-        backgroundColor: PANEL,
-        flexDirection: "column",
-        marginBottom: 1,
-        paddingLeft: 1,
-        paddingRight: 1,
-      }}
-    >
-      {trace.lines.map((line, index) => (
-        <text
-          key={`${trace.id}-${index}`}
-          content={line}
-          style={{ fg: tone }}
         />
-      ))}
+      </box>
     </box>
   );
 }
 
 function hasPendingAssistant(entries: ChatEntry[]): boolean {
   return entries.some((entry) => entry.role === "assistant" && entry.pending);
-}
-
-async function handleInterrupt(
-  session: ChatSession,
-  isStreaming: boolean,
-  exitArmed: boolean,
-  setExitArmed: Dispatch<SetStateAction<boolean>>,
-  onExit: () => void,
-): Promise<void> {
-  if (isStreaming) {
-    await session.abort();
-    setExitArmed(false);
-    return;
-  }
-
-  if (exitArmed) {
-    onExit();
-    return;
-  }
-
-  setExitArmed(true);
 }
