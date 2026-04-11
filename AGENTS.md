@@ -4,13 +4,11 @@
 
 This repository is a Bun-powered Turborepo.
 
-- `apps/web`: Next.js App Router frontend (`app/`, `public/`).
+- `apps/web`: Next.js App Router frontend (routes in `src/app/`, shared UI and libs in `src/`, `public/`).
 - `apps/cli`: Bun-native CLI entrypoint at `src/index.ts`.
 - `packages/eslint-config`: Shared ESLint presets.
 - `packages/typescript-config`: Shared `tsconfig` bases.
 - Root config: `turbo.json`, `package.json`, `bun.lock`.
-
-Keep app-specific code inside its app folder; move reusable UI or config into `packages/`.
 
 ## Build, Test, and Development Commands
 
@@ -40,7 +38,7 @@ There is no dedicated test framework configured yet. Minimum quality gate for ev
 
 When adding tests, colocate with source as `*.test.ts`/`*.test.tsx` and wire a workspace `test` script.
 
-<!-- opensrc:start -->
+
 
 ## Source Code Reference
 
@@ -61,4 +59,3 @@ npx opensrc crates:<package>    # Rust crate (e.g., npx opensrc crates:serde)
 npx opensrc <owner>/<repo>      # GitHub repo (e.g., npx opensrc vercel/ai)
 ```
 
-<!-- opensrc:end -->

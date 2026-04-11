@@ -26,6 +26,24 @@ export type NormalizedPrice = {
   exchange?: string;
 };
 
+export type AlpacaAsset = {
+  symbol: string;
+  name?: string;
+  exchange?: string;
+  class?: string;
+  status?: string;
+  tradable?: boolean;
+};
+
+export type NormalizedAsset = {
+  symbol: string;
+  name?: string;
+  exchange?: string;
+  assetClass?: string;
+  status?: string;
+  tradable: boolean;
+};
+
 export type OptionContract = {
   id: string;
   symbol: string;

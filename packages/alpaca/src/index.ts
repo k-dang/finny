@@ -1,10 +1,12 @@
 export type {
+  AlpacaAsset,
   AlpacaCredentials,
+  NormalizedAsset,
   NormalizedOption,
   NormalizedPrice,
   OptionType,
 } from "./types";
 
-export { getLatestPrices } from "./stocks";
+export { getAsset, getLatestPrices } from "./stocks";
 
 export { getOptionChain } from "./options";
