@@ -1,24 +1,8 @@
 import Link from "next/link";
 import { ArrowRight, Building2, Search, ShieldCheck } from "lucide-react";
-import { openTickerDashboard } from "@/actions";
 import { TickerSearchForm } from "@/components/ticker-search-form";
-import { normalizeTickerInput } from "@/lib/stocks";
 
-function readTickerValue(value: string | string[] | undefined): string {
-  if (Array.isArray(value)) {
-    return value[0] ?? "";
-  }
-
-  return value ?? "";
-}
-
-export default async function Home(props: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
-  const searchParams = await props.searchParams;
-  const submittedTicker = normalizeTickerInput(readTickerValue(searchParams.ticker));
-  const errorMessage = readTickerValue(searchParams.error) || undefined;
-
+export default function Home() {
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(15,118,110,0.18),_transparent_32%),linear-gradient(180deg,_#f5f1e8_0%,_#fffdf8_45%,_#f3efe4_100%)] px-6 py-10 text-slate-950">
       <div className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-6xl flex-col justify-between gap-12">
@@ -41,18 +25,14 @@ export default async function Home(props: {
                 later phases.
               </p>
             </div>
-            <TickerSearchForm
-              action={openTickerDashboard}
-              defaultValue={submittedTicker}
-              errorMessage={errorMessage}
-            />
+            <TickerSearchForm />
             <div className="flex flex-wrap gap-3 text-sm text-slate-700">
               <span className="font-medium text-slate-900">Try:</span>
               {["AAPL", "MSFT", "BRK.B", "NVDA"].map((ticker) => (
                 <Link
                   key={ticker}
                   className="rounded-full border border-slate-300 bg-white/75 px-3 py-1 transition hover:border-teal-700 hover:text-teal-900"
-                  href={`/?ticker=${encodeURIComponent(ticker)}`}
+                  href={`/stocks/${encodeURIComponent(ticker)}`}
                 >
                   {ticker}
                 </Link>

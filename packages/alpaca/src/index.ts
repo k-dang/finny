@@ -4,9 +4,15 @@ export type {
   NormalizedAsset,
   NormalizedOption,
   NormalizedPrice,
+  NormalizedStockSnapshot,
   OptionType,
 } from "./types";
 
-export { getAsset, getLatestPrices } from "./stocks";
+export {
+  getAsset,
+  getLatestPrices,
+  getStockSnapshots,
+  normalizeStockSnapshots,
+} from "./stocks";
 
 export { getOptionChain } from "./options";

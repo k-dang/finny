@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { ArrowLeft, Building2 } from "lucide-react";
+import { StockQuoteSummary } from "@/components/stock-quote-summary";
 import { StockStatusBanner } from "@/components/stock-status-banner";
 import { TickerSearchForm } from "@/components/ticker-search-form";
+import type { QuoteSummarySection } from "@/lib/quote-summary";
 import type { StockLookupResult } from "@/lib/stocks";
 
 type StockDashboardShellProps = {
   result: StockLookupResult;
+  quote: QuoteSummarySection;
 };
 
 export function StockDashboardShell(props: StockDashboardShellProps) {
@@ -45,7 +48,7 @@ export function StockDashboardShell(props: StockDashboardShellProps) {
               </h1>
               <p className="max-w-2xl text-base leading-7 text-slate-700">
                 {props.result.status === "ready"
-                  ? "Dashboard shell is live. Quote, valuation, earnings, and cash-flow slices will fill in during later phases."
+                  ? "The dashboard is now showing live quote context. Earnings, valuation, and cash-flow slices will land in the next phases."
                   : props.result.status === "invalid"
                     ? "The route rendered a clear invalid-input state instead of a broken dashboard."
                     : "This route stays canonical even when data verification is limited, so the stock URL remains stable and shareable."}
@@ -56,12 +59,10 @@ export function StockDashboardShell(props: StockDashboardShellProps) {
           <TickerSearchForm compact />
         </section>
 
-        <section className="grid gap-4 md:grid-cols-3">
+        <StockQuoteSummary quote={props.quote} ticker={props.result.ticker} />
+
+        <section className="grid gap-4 md:grid-cols-2">
           {[
-            {
-              title: "Quote Summary",
-              body: "Phase 2 will add current price, daily move, freshness, and source context.",
-            },
             {
               title: "Earnings & Valuation",
               body: "Phase 3 will add the next earnings date and a valuation read like P/E.",

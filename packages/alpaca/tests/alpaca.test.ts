@@ -3,7 +3,7 @@ import {
   normalizeOptionChainResponse,
   parseOptionSymbol,
 } from "../src/options";
-import { normalizeLatestTrades } from "../src/stocks";
+import { normalizeLatestTrades, normalizeStockSnapshots } from "../src/stocks";
 
 describe("normalizeLatestTrades", () => {
   it("maps latest trades to normalized prices", () => {
@@ -32,6 +32,36 @@ describe("normalizeLatestTrades", () => {
 
   it("returns an empty object when there are no trades", () => {
     expect(normalizeLatestTrades({ trades: {} })).toEqual({});
+  });
+});
+
+describe("normalizeStockSnapshots", () => {
+  it("maps latest trade and previous close data into a stable shape", () => {
+    const output = normalizeStockSnapshots({
+      AAPL: {
+        latestTrade: { t: "2024-01-15T15:59:59Z", p: 189.12, x: "V" },
+        previousDailyBar: { t: "2024-01-12T21:00:00Z", c: 185.25 },
+        dailyBar: { t: "2024-01-15T21:00:00Z", c: 189.12 },
+      },
+    });
+
+    expect(output).toEqual({
+      AAPL: {
+        symbol: "AAPL",
+        latestTrade: {
+          symbol: "AAPL",
+          price: 189.12,
+          timestamp: "2024-01-15T15:59:59Z",
+          exchange: "V",
+        },
+        previousDailyBar: { t: "2024-01-12T21:00:00Z", c: 185.25 },
+        dailyBar: { t: "2024-01-15T21:00:00Z", c: 189.12 },
+      },
+    });
+  });
+
+  it("returns an empty object when no snapshots are present", () => {
+    expect(normalizeStockSnapshots({})).toEqual({});
   });
 });
 

@@ -19,11 +19,37 @@ export type LatestTradesResponse = {
   trades: Record<string, LatestTrade>;
 };
 
+export type SnapshotBar = {
+  t: string;
+  c: number;
+  o?: number;
+  h?: number;
+  l?: number;
+  v?: number;
+  n?: number;
+  vw?: number;
+};
+
+export type StockSnapshot = {
+  latestTrade?: LatestTrade;
+  previousDailyBar?: SnapshotBar;
+  dailyBar?: SnapshotBar;
+};
+
+export type StockSnapshotsResponse = Record<string, StockSnapshot>;
+
 export type NormalizedPrice = {
   symbol: string;
   price: number;
   timestamp: string;
   exchange?: string;
+};
+
+export type NormalizedStockSnapshot = {
+  symbol: string;
+  latestTrade?: NormalizedPrice;
+  previousDailyBar?: SnapshotBar;
+  dailyBar?: SnapshotBar;
 };
 
 export type AlpacaAsset = {

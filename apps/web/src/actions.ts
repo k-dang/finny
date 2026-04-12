@@ -3,7 +3,14 @@
 import { redirect } from "next/navigation";
 import { resolveTickerInput } from "@/lib/stocks";
 
-export async function openTickerDashboard(formData: FormData) {
+export type OpenTickerDashboardState = {
+  errorMessage?: string;
+};
+
+export async function openTickerDashboard(
+  _previousState: OpenTickerDashboardState,
+  formData: FormData,
+): Promise<OpenTickerDashboardState> {
   const rawTicker = formData.get("ticker");
   const submittedTicker = typeof rawTicker === "string" ? rawTicker : "";
   const resolution = await resolveTickerInput(submittedTicker);
@@ -12,15 +19,8 @@ export async function openTickerDashboard(formData: FormData) {
     redirect(`/stocks/${encodeURIComponent(resolution.ticker)}`);
   }
 
-  const params = new URLSearchParams();
-
-  if (submittedTicker) {
-    params.set("ticker", submittedTicker);
-  }
-
-  if (resolution.message) {
-    params.set("error", resolution.message);
-  }
-
-  redirect(`/?${params.toString()}`);
+  return {
+    errorMessage:
+      resolution.message ?? "Ticker lookup failed. Try a different symbol.",
+  };
 }

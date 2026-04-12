@@ -1,0 +1,163 @@
+import { getStockSnapshots, type NormalizedStockSnapshot } from "@repo/alpaca";
+import { readAlpacaCredentials } from "@/lib/server/alpaca";
+import { resolveStockLookup, validateTickerInput } from "@/lib/stocks";
+
+const QUOTE_PROVIDER = "alpaca";
+const QUOTE_FEED = "iex";
+const QUOTE_REFERENCE_POINT = "Previous daily bar close";
+
+type QuoteSourceContext = {
+  provider: typeof QUOTE_PROVIDER;
+  feed: typeof QUOTE_FEED;
+  referencePoint: typeof QUOTE_REFERENCE_POINT;
+};
+
+type QuoteSectionBase = {
+  source: QuoteSourceContext;
+};
+
+export type QuoteSummarySection =
+  | (QuoteSectionBase & {
+      status: "success" | "partial";
+      currentPrice: number;
+      updatedAt: string;
+      exchange?: string;
+      priceChange?: number;
+      percentChange?: number;
+      message?: string;
+    })
+  | (QuoteSectionBase & {
+      status: "empty" | "error";
+      message: string;
+    });
+
+export type StockDashboardViewModel = {
+  stock: Awaited<ReturnType<typeof resolveStockLookup>>;
+  quote: QuoteSummarySection;
+};
+
+function createSourceContext(): QuoteSourceContext {
+  return {
+    provider: QUOTE_PROVIDER,
+    feed: QUOTE_FEED,
+    referencePoint: QUOTE_REFERENCE_POINT,
+  };
+}
+
+function createQuoteError(message: string): QuoteSummarySection {
+  return {
+    status: "error",
+    message,
+    source: createSourceContext(),
+  };
+}
+
+function createQuoteEmpty(message: string): QuoteSummarySection {
+  return {
+    status: "empty",
+    message,
+    source: createSourceContext(),
+  };
+}
+
+export function buildQuoteSummaryFromSnapshot(
+  ticker: string,
+  snapshot?: NormalizedStockSnapshot,
+): QuoteSummarySection {
+  const latestTrade = snapshot?.latestTrade;
+
+  if (!latestTrade) {
+    return createQuoteEmpty(`No live quote was returned for ${ticker}.`);
+  }
+
+  const previousClose = snapshot?.previousDailyBar?.c;
+
+  if (typeof previousClose !== "number" || !Number.isFinite(previousClose)) {
+    return {
+      status: "partial",
+      currentPrice: latestTrade.price,
+      updatedAt: latestTrade.timestamp,
+      exchange: latestTrade.exchange,
+      message:
+        "Current price is available, but the previous close reference was unavailable for daily movement.",
+      source: createSourceContext(),
+    };
+  }
+
+  if (previousClose === 0) {
+    return {
+      status: "partial",
+      currentPrice: latestTrade.price,
+      updatedAt: latestTrade.timestamp,
+      exchange: latestTrade.exchange,
+      message:
+        "Current price is available, but the previous close was zero so daily percent change could not be calculated.",
+      source: createSourceContext(),
+    };
+  }
+
+  const priceChange = latestTrade.price - previousClose;
+  const percentChange = (priceChange / previousClose) * 100;
+
+  return {
+    status: "success",
+    currentPrice: latestTrade.price,
+    updatedAt: latestTrade.timestamp,
+    exchange: latestTrade.exchange,
+    priceChange,
+    percentChange,
+    source: createSourceContext(),
+  };
+}
+
+export async function getQuoteSummary(ticker: string): Promise<QuoteSummarySection> {
+  const validation = validateTickerInput(ticker);
+
+  if (!validation.valid) {
+    return createQuoteEmpty(validation.message);
+  }
+
+  const credentials = readAlpacaCredentials();
+
+  if (!credentials) {
+    return createQuoteError(
+      "Quote data is unavailable because Alpaca credentials are missing.",
+    );
+  }
+
+  try {
+    const snapshots = await getStockSnapshots({
+      symbols: [ticker],
+      feed: QUOTE_FEED,
+      credentials,
+    });
+
+    return buildQuoteSummaryFromSnapshot(ticker, snapshots[ticker]);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+
+    return createQuoteError(
+      `Quote data is temporarily unavailable from Alpaca. ${message}`,
+    );
+  }
+}
+
+export async function getStockDashboard(
+  rawTicker: string,
+): Promise<StockDashboardViewModel> {
+  const stock = await resolveStockLookup(rawTicker);
+
+  if (stock.status === "invalid" || stock.status === "unsupported") {
+    return {
+      stock,
+      quote: createQuoteEmpty("Quote summary is unavailable for this ticker."),
+    };
+  }
+
+  const quote = await getQuoteSummary(stock.ticker);
+
+  return {
+    stock,
+    quote,
+  };
+}

@@ -1,4 +1,5 @@
 import { getAsset } from "@repo/alpaca";
+import { readAlpacaCredentials } from "@/lib/server/alpaca";
 
 const TICKER_PATTERN = /^(?:[A-Z]{1,5}|[A-Z]{1,4}[.-][A-Z])$/;
 
@@ -56,17 +57,6 @@ export function validateTickerInput(
   }
 
   return { valid: true, ticker };
-}
-
-function readAlpacaCredentials() {
-  const key = process.env.ALPACA_API_KEY;
-  const secret = process.env.ALPACA_API_SECRET;
-
-  if (!key || !secret) {
-    return null;
-  }
-
-  return { key, secret };
 }
 
 function isUnsupportedAssetError(error: unknown): boolean {
