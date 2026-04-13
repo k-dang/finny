@@ -1,6 +1,6 @@
 import { permanentRedirect } from "next/navigation";
 import { StockDashboardShell } from "@/components/stock-dashboard-shell";
-import { getStockDashboard } from "@/lib/quote-summary";
+import { getStockDashboard } from "@/lib/stock-dashboard";
 import { normalizeTickerInput } from "@/lib/stocks";
 
 export default async function StockPage(props: {
@@ -15,5 +15,11 @@ export default async function StockPage(props: {
 
   const dashboard = await getStockDashboard(normalizedTicker);
 
-  return <StockDashboardShell quote={dashboard.quote} result={dashboard.stock} />;
+  return (
+    <StockDashboardShell
+      fundamentals={dashboard.fundamentals}
+      quote={dashboard.quote}
+      result={dashboard.stock}
+    />
+  );
 }

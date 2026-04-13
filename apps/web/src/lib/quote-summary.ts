@@ -1,6 +1,6 @@
 import { getStockSnapshots, type NormalizedStockSnapshot } from "@repo/alpaca";
 import { readAlpacaCredentials } from "@/lib/server/alpaca";
-import { resolveStockLookup, validateTickerInput } from "@/lib/stocks";
+import { validateTickerInput } from "@/lib/stocks";
 
 const QUOTE_PROVIDER = "alpaca";
 const QUOTE_FEED = "iex";
@@ -30,11 +30,6 @@ export type QuoteSummarySection =
       status: "empty" | "error";
       message: string;
     });
-
-export type StockDashboardViewModel = {
-  stock: Awaited<ReturnType<typeof resolveStockLookup>>;
-  quote: QuoteSummarySection;
-};
 
 function createSourceContext(): QuoteSourceContext {
   return {
@@ -140,24 +135,4 @@ export async function getQuoteSummary(ticker: string): Promise<QuoteSummarySecti
       `Quote data is temporarily unavailable from Alpaca. ${message}`,
     );
   }
-}
-
-export async function getStockDashboard(
-  rawTicker: string,
-): Promise<StockDashboardViewModel> {
-  const stock = await resolveStockLookup(rawTicker);
-
-  if (stock.status === "invalid" || stock.status === "unsupported") {
-    return {
-      stock,
-      quote: createQuoteEmpty("Quote summary is unavailable for this ticker."),
-    };
-  }
-
-  const quote = await getQuoteSummary(stock.ticker);
-
-  return {
-    stock,
-    quote,
-  };
 }
