@@ -5,11 +5,12 @@ import { validateTickerInput } from "@/lib/stocks";
 const QUOTE_PROVIDER = "alpaca";
 const QUOTE_FEED = "iex";
 const QUOTE_REFERENCE_POINT = "Previous daily bar close";
+const QUOTE_INTRADAY_REFERENCE_POINT = "Current daily bar open";
 
 type QuoteSourceContext = {
   provider: typeof QUOTE_PROVIDER;
   feed: typeof QUOTE_FEED;
-  referencePoint: typeof QUOTE_REFERENCE_POINT;
+  referencePoint: string;
 };
 
 type QuoteSectionBase = {
@@ -39,6 +40,14 @@ function createSourceContext(): QuoteSourceContext {
   };
 }
 
+function createIntradaySourceContext(): QuoteSourceContext {
+  return {
+    provider: QUOTE_PROVIDER,
+    feed: QUOTE_FEED,
+    referencePoint: QUOTE_INTRADAY_REFERENCE_POINT,
+  };
+}
+
 function createQuoteError(message: string): QuoteSummarySection {
   return {
     status: "error",
@@ -60,19 +69,46 @@ export function buildQuoteSummaryFromSnapshot(
   snapshot?: NormalizedStockSnapshot,
 ): QuoteSummarySection {
   const latestTrade = snapshot?.latestTrade;
+  const dailyBar = snapshot?.dailyBar;
+  const currentPrice =
+    typeof latestTrade?.price === "number" && Number.isFinite(latestTrade.price)
+      ? latestTrade.price
+      : typeof dailyBar?.c === "number" && Number.isFinite(dailyBar.c)
+        ? dailyBar.c
+        : undefined;
+  const updatedAt = latestTrade?.timestamp ?? dailyBar?.t;
 
-  if (!latestTrade) {
+  if (typeof currentPrice !== "number" || !updatedAt) {
     return createQuoteEmpty(`No live quote was returned for ${ticker}.`);
   }
 
   const previousClose = snapshot?.previousDailyBar?.c;
 
   if (typeof previousClose !== "number" || !Number.isFinite(previousClose)) {
+    const dailyOpen = dailyBar?.o;
+
+    if (typeof dailyOpen === "number" && Number.isFinite(dailyOpen) && dailyOpen !== 0) {
+      const priceChange = currentPrice - dailyOpen;
+      const percentChange = (priceChange / dailyOpen) * 100;
+
+      return {
+        status: "partial",
+        currentPrice,
+        updatedAt,
+        exchange: latestTrade?.exchange,
+        priceChange,
+        percentChange,
+        message:
+          "Previous close was unavailable, so daily movement is using the current session open instead.",
+        source: createIntradaySourceContext(),
+      };
+    }
+
     return {
       status: "partial",
-      currentPrice: latestTrade.price,
-      updatedAt: latestTrade.timestamp,
-      exchange: latestTrade.exchange,
+      currentPrice,
+      updatedAt,
+      exchange: latestTrade?.exchange,
       message:
         "Current price is available, but the previous close reference was unavailable for daily movement.",
       source: createSourceContext(),
@@ -82,23 +118,23 @@ export function buildQuoteSummaryFromSnapshot(
   if (previousClose === 0) {
     return {
       status: "partial",
-      currentPrice: latestTrade.price,
-      updatedAt: latestTrade.timestamp,
-      exchange: latestTrade.exchange,
+      currentPrice,
+      updatedAt,
+      exchange: latestTrade?.exchange,
       message:
         "Current price is available, but the previous close was zero so daily percent change could not be calculated.",
       source: createSourceContext(),
     };
   }
 
-  const priceChange = latestTrade.price - previousClose;
+  const priceChange = currentPrice - previousClose;
   const percentChange = (priceChange / previousClose) * 100;
 
   return {
     status: "success",
-    currentPrice: latestTrade.price,
-    updatedAt: latestTrade.timestamp,
-    exchange: latestTrade.exchange,
+    currentPrice,
+    updatedAt,
+    exchange: latestTrade?.exchange,
     priceChange,
     percentChange,
     source: createSourceContext(),
