@@ -20,7 +20,7 @@ describe("buildFundamentalsSummary", () => {
             {
               provider: "fmp",
               ticker: "AAPL",
-              url: "https://financialmodelingprep.com/stable/earnings-calendar?symbol=AAPL",
+              url: "https://financialmodelingprep.com/stable/earnings?symbol=AAPL",
               retrievedAt: "2026-04-12T12:00:00Z",
               asOfDate: "2026-05-01",
             },
@@ -52,14 +52,14 @@ describe("buildFundamentalsSummary", () => {
       earnings: {
         label: "Next earnings date",
         provider: "fmp",
-        endpoint: "earnings-calendar",
+        endpoint: "earnings",
         status: "available",
         value: "2026-05-01T00:00:00.000Z",
         provenance: [
           {
             provider: "fmp",
             ticker: "AAPL",
-            url: "https://financialmodelingprep.com/stable/earnings-calendar?symbol=AAPL",
+            url: "https://financialmodelingprep.com/stable/earnings?symbol=AAPL",
             retrievedAt: "2026-04-12T12:00:00Z",
             asOfDate: "2026-05-01",
           },

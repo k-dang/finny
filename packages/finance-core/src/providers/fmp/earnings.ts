@@ -7,14 +7,15 @@ type FmpEarningsCalendarInput = {
   apiKey?: string;
 };
 
-type FmpEarningsCalendarRecord = {
+type FmpEarningsRecord = {
+  symbol?: string;
   date?: string;
   [key: string]: string | number | boolean | null | undefined;
 };
 
-type FmpEarningsCalendarPayload = Record<string, FmpEarningsCalendarRecord[]>;
+type FmpEarningsPayload = Record<string, FmpEarningsRecord[]>;
 
-function extractAsOfDate(value: FmpEarningsCalendarRecord[]): string | undefined {
+function extractAsOfDate(value: FmpEarningsRecord[]): string | undefined {
   if (value.length === 0) {
     return undefined;
   }
@@ -23,21 +24,35 @@ function extractAsOfDate(value: FmpEarningsCalendarRecord[]): string | undefined
   return typeof first?.date === "string" ? first.date : undefined;
 }
 
-export async function fetchFmpEarningsCalendar(
+function filterTickerRecords(
+  ticker: string,
+  records: FmpEarningsRecord[],
+): FmpEarningsRecord[] {
+  return records.filter((record) => {
+    if (typeof record.symbol !== "string") {
+      return true;
+    }
+
+    return record.symbol.toUpperCase() === ticker;
+  });
+}
+
+export async function fetchFmpEarnings(
   input: FmpEarningsCalendarInput,
-): Promise<FinanceCoreResult<FmpEarningsCalendarPayload>> {
+): Promise<FinanceCoreResult<FmpEarningsPayload>> {
   const ticker = input.ticker.toUpperCase();
 
   try {
-    const response = await requestFmpJson<FmpEarningsCalendarRecord[]>({
-      path: "/earnings-calendar",
+    const response = await requestFmpJson<FmpEarningsRecord[]>({
+      path: "/earnings",
       query: { symbol: ticker },
       apiKey: input.apiKey,
     });
+    const records = filterTickerRecords(ticker, response.data);
 
     return okResult(
       {
-        [ticker]: response.data,
+        [ticker]: records,
       },
       {
         provenance: [
@@ -46,7 +61,7 @@ export async function fetchFmpEarningsCalendar(
             ticker,
             url: response.url,
             retrievedAt: response.retrievedAt,
-            asOfDate: extractAsOfDate(response.data),
+            asOfDate: extractAsOfDate(records),
           },
         ],
       },

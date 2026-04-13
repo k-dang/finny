@@ -1,5 +1,5 @@
 import type { FinanceCoreResult, ProvenanceRecord } from "@repo/finance-core";
-import { fetchFmpEarningsCalendar, fetchFmpRatios } from "@repo/finance-core";
+import { fetchFmpEarnings, fetchFmpRatios } from "@repo/finance-core";
 import { readFmpApiKey } from "@/lib/server/fmp";
 import { validateTickerInput } from "@/lib/stocks";
 
@@ -10,7 +10,7 @@ type FundamentalsMetricStatus = "available" | "unavailable" | "error";
 type FundamentalsMetricBase = {
   label: string;
   provider: typeof FUNDAMENTALS_PROVIDER;
-  endpoint: "earnings-calendar" | "ratios-ttm";
+  endpoint: "earnings" | "ratios-ttm";
   status: FundamentalsMetricStatus;
   retrievedAt?: string;
   asOfDate?: string;
@@ -20,7 +20,7 @@ type FundamentalsMetricBase = {
 
 export type EarningsMetric = FundamentalsMetricBase & {
   label: "Next earnings date";
-  endpoint: "earnings-calendar";
+  endpoint: "earnings";
   value?: string;
 };
 
@@ -37,7 +37,7 @@ export type FundamentalsSummarySection = {
   valuation: ValuationMetric;
 };
 
-type EarningsCalendarPayload = Record<
+type EarningsPayload = Record<
   string,
   Array<Record<string, string | number | boolean | null | undefined>>
 >;
@@ -57,7 +57,7 @@ function createEarningsMetric(
   return {
     label: "Next earnings date",
     provider: FUNDAMENTALS_PROVIDER,
-    endpoint: "earnings-calendar",
+    endpoint: "earnings",
     status: "unavailable",
     ...overrides,
   };
@@ -131,7 +131,7 @@ function extractPeRatio(
 
 export function buildFundamentalsSummary(input: {
   ticker: string;
-  earningsResult?: FinanceCoreResult<EarningsCalendarPayload>;
+  earningsResult?: FinanceCoreResult<EarningsPayload>;
   ratiosResult?: FinanceCoreResult<RatiosPayload>;
   now?: Date;
 }): FundamentalsSummarySection {
@@ -145,10 +145,10 @@ export function buildFundamentalsSummary(input: {
   const earnings =
     input.earningsResult?.error
       ? createEarningsMetric({
-          status: "error",
-          message:
-            input.earningsResult.message ??
-            `Earnings calendar data is temporarily unavailable for ${input.ticker}.`,
+            status: "error",
+            message:
+              input.earningsResult.message ??
+            `Earnings data is temporarily unavailable for ${input.ticker}.`,
           provenance: input.earningsResult.provenance,
           retrievedAt: readRetrievedAt(input.earningsResult.provenance),
           asOfDate: readAsOfDate(input.earningsResult.provenance),
@@ -271,7 +271,7 @@ export async function getFundamentalsSummary(
   }
 
   const [earningsFetch, ratiosFetch] = await Promise.allSettled([
-    fetchFmpEarningsCalendar({ ticker, apiKey }),
+    fetchFmpEarnings({ ticker, apiKey }),
     fetchFmpRatios({ ticker, period: "ttm", limit: 1, apiKey }),
   ]);
 

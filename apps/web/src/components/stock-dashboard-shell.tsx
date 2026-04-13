@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { ArrowLeft, Building2 } from "lucide-react";
+import { StockCashFlowSummary } from "@/components/stock-cash-flow-summary";
 import { StockFundamentalsSummary } from "@/components/stock-fundamentals-summary";
 import { StockQuoteSummary } from "@/components/stock-quote-summary";
 import { StockStatusBanner } from "@/components/stock-status-banner";
 import { TickerSearchForm } from "@/components/ticker-search-form";
+import type { CashFlowSummarySection } from "@/lib/cash-flow-summary";
 import type { FundamentalsSummarySection } from "@/lib/fundamentals-summary";
 import type { QuoteSummarySection } from "@/lib/quote-summary";
 import type { StockLookupResult } from "@/lib/stocks";
@@ -12,6 +14,7 @@ type StockDashboardShellProps = {
   result: StockLookupResult;
   quote: QuoteSummarySection;
   fundamentals: FundamentalsSummarySection;
+  cashFlow: CashFlowSummarySection;
 };
 
 export function StockDashboardShell(props: StockDashboardShellProps) {
@@ -51,7 +54,7 @@ export function StockDashboardShell(props: StockDashboardShellProps) {
               </h1>
               <p className="max-w-2xl text-base leading-7 text-slate-700">
                 {props.result.status === "ready"
-                  ? "The dashboard is now showing live quote context plus the phase 3 fundamentals slice for upcoming earnings and valuation."
+                  ? "The dashboard is now showing the full v1 slice: live quote context, upcoming earnings, trailing valuation, and compact cash-flow fields."
                   : props.result.status === "invalid"
                     ? "The route rendered a clear invalid-input state instead of a broken dashboard."
                     : "This route stays canonical even when data verification is limited, so the stock URL remains stable and shareable."}
@@ -67,30 +70,10 @@ export function StockDashboardShell(props: StockDashboardShellProps) {
           fundamentals={props.fundamentals}
           ticker={props.result.ticker}
         />
-
-        <section className="grid gap-4 md:grid-cols-1">
-          {[
-            {
-              title: "Cash Flow",
-              body: "Phase 4 will add a compact operating, investing, financing, and free-cash-flow view.",
-            },
-          ].map((section) => (
-            <article
-              key={section.title}
-              className="rounded-[1.5rem] border border-slate-900/10 bg-white/75 p-5 shadow-sm backdrop-blur"
-            >
-              <p className="font-mono text-xs uppercase tracking-[0.22em] text-slate-500">
-                Planned slice
-              </p>
-              <h2 className="mt-3 text-lg font-semibold tracking-[-0.02em] text-slate-950">
-                {section.title}
-              </h2>
-              <p className="mt-2 text-sm leading-6 text-slate-700">
-                {section.body}
-              </p>
-            </article>
-          ))}
-        </section>
+        <StockCashFlowSummary
+          cashFlow={props.cashFlow}
+          ticker={props.result.ticker}
+        />
       </div>
     </main>
   );

@@ -17,6 +17,7 @@ export default async function StockPage(props: {
 
   return (
     <StockDashboardShell
+      cashFlow={dashboard.cashFlow}
       fundamentals={dashboard.fundamentals}
       quote={dashboard.quote}
       result={dashboard.stock}
