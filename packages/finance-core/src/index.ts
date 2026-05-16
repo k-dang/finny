@@ -1,10 +1,20 @@
 export type * from "./types";
 
-export { fetchFmpFundamentals } from "./providers/fmp/fundamentals";
-export { fetchFmpRatios } from "./providers/fmp/ratios";
-export { fetchFmpEstimates } from "./providers/fmp/estimates";
-export { fetchFmpEarnings } from "./providers/fmp/earnings";
-export { fetchFmpInsiderTrades } from "./providers/fmp/insider";
-export { fetchFmpSegments } from "./providers/fmp/segments";
+export { createFmpProvider } from "./providers/fmp/provider";
+export type {
+  FmpEarningsPayload,
+  FmpEarningsRecord,
+  FmpEstimateRecord,
+  FmpEstimatesPayload,
+  FmpFundamentalsPayload,
+  FmpInsiderPayload,
+  FmpInsiderTradeRecord,
+  FmpProvider,
+  FmpRatioRecord,
+  FmpRatiosPayload,
+  FmpSegmentRecord,
+  FmpSegmentsPayload,
+  FmpStatementRecord,
+} from "./providers/fmp/provider";
 export { listSecFilings, readSecFilingItems } from "./providers/sec/filings";
 export type { SecClientCredentials } from "./providers/sec/client";

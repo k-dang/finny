@@ -1,9 +1,5 @@
 import {
-  fetchFmpEstimates,
-  fetchFmpFundamentals,
-  fetchFmpInsiderTrades,
-  fetchFmpRatios,
-  fetchFmpSegments,
+  createFmpProvider,
   listSecFilings,
   readSecFilingItems,
 } from "@repo/finance-core";
@@ -128,18 +124,15 @@ const financialFilingReadItemsInputSchema = z
   })
   .strict();
 
+const fmp = createFmpProvider({ apiKey: process.env.FMP_API_KEY });
+
 export const financialTools = {
   financial_fundamentals: tool({
     description:
       "Fetch financial statements (income, balance sheet, cash flow) for one ticker from FMP. If period=ttm, FMP quarter mode is used and returns recent quarterly statements.",
     inputSchema: financialFundamentalsInputSchema,
     execute: async ({ ticker, period, limit }) => {
-      return fetchFmpFundamentals({
-        ticker,
-        period,
-        limit,
-        apiKey: process.env.FMP_API_KEY,
-      });
+      return fmp.fundamentals({ ticker, period, limit });
     },
   }),
 
@@ -148,12 +141,7 @@ export const financialTools = {
       "Fetch valuation and quality ratio records for one ticker from FMP.",
     inputSchema: financialRatiosInputSchema,
     execute: async ({ ticker, period, limit }) => {
-      return fetchFmpRatios({
-        ticker,
-        period,
-        limit,
-        apiKey: process.env.FMP_API_KEY,
-      });
+      return fmp.ratios({ ticker, period, limit });
     },
   }),
 
@@ -161,11 +149,7 @@ export const financialTools = {
     description: "Fetch analyst estimate records for one ticker from FMP.",
     inputSchema: financialEstimatesInputSchema,
     execute: async ({ ticker, limit }) => {
-      return fetchFmpEstimates({
-        ticker,
-        limit,
-        apiKey: process.env.FMP_API_KEY,
-      });
+      return fmp.estimates({ ticker, limit });
     },
   }),
 
@@ -173,11 +157,7 @@ export const financialTools = {
     description: "Fetch insider trading records for one ticker from FMP.",
     inputSchema: financialInsiderTradesInputSchema,
     execute: async ({ ticker, limit }) => {
-      return fetchFmpInsiderTrades({
-        ticker,
-        limit,
-        apiKey: process.env.FMP_API_KEY,
-      });
+      return fmp.insiderTrades({ ticker, limit });
     },
   }),
 
@@ -185,12 +165,7 @@ export const financialTools = {
     description: "Fetch segment revenue history for one ticker from FMP.",
     inputSchema: financialSegmentsInputSchema,
     execute: async ({ ticker, period, limit }) => {
-      return fetchFmpSegments({
-        ticker,
-        period,
-        limit,
-        apiKey: process.env.FMP_API_KEY,
-      });
+      return fmp.segments({ ticker, period, limit });
     },
   }),
 
