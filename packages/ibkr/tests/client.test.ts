@@ -9,7 +9,7 @@ import {
 
 type FetchCall = {
   input: string;
-  init: RequestInit | undefined;
+  init: Parameters<typeof fetch>[1];
 };
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -84,13 +84,13 @@ describe("isAuthenticatedPayload", () => {
 describe("createIbkrClient", () => {
   it("builds expected URLs and query params for getOrders", async () => {
     const calls: FetchCall[] = [];
-    const fetchFn: typeof fetch = async (input, init) => {
+    const fetchFn = (async (input, init) => {
       calls.push({ input: String(input), init });
       if (calls.length === 1) {
         return jsonResponse({ ok: true });
       }
       return jsonResponse({ orders: [] });
-    };
+    }) as typeof fetch;
 
     const client = createIbkrClient({
       baseUrl: "https://localhost:5000/",
@@ -107,13 +107,16 @@ describe("createIbkrClient", () => {
       "https://localhost:5000/v1/api/iserver/accounts",
       "https://localhost:5000/v1/api/iserver/account/orders?accountId=DU9001&filters=Filled&force=true",
     ]);
-    expect(calls[0]?.init?.tls).toEqual({ rejectUnauthorized: true });
+    expect((calls[0]?.init as { tls?: unknown } | undefined)?.tls).toEqual({
+      rejectUnauthorized: true,
+    });
     expect(calls[1]?.init?.method).toBe("GET");
   });
 
   it("surfaces HTTP errors with status and body", async () => {
     const client = createIbkrClient({
-      fetchFn: async () => new Response("gateway down", { status: 502 }),
+      fetchFn: (async () =>
+        new Response("gateway down", { status: 502 })) as unknown as typeof fetch,
     });
 
     await expect(client.getAccounts()).rejects.toThrow(
@@ -123,11 +126,11 @@ describe("createIbkrClient", () => {
 
   it("surfaces invalid JSON payloads", async () => {
     const client = createIbkrClient({
-      fetchFn: async () =>
+      fetchFn: (async () =>
         new Response("not-json", {
           status: 200,
           headers: { "content-type": "application/json" },
-        }),
+        })) as unknown as typeof fetch,
     });
 
     await expect(client.getAccounts()).rejects.toThrow(
@@ -138,9 +141,9 @@ describe("createIbkrClient", () => {
   it("wraps fetch connectivity failures", async () => {
     const client = createIbkrClient({
       baseUrl: "https://localhost:7000",
-      fetchFn: async () => {
+      fetchFn: (async () => {
         throw new Error("connect ECONNREFUSED");
-      },
+      }) as unknown as typeof fetch,
     });
 
     await expect(client.getAccounts()).rejects.toThrow(

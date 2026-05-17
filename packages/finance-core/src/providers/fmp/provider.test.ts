@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { createFmpProvider } from "../src/providers/fmp/provider";
+import { createFmpProvider } from "./provider";
 
 const NOW = new Date("2026-01-01T00:00:00.000Z");
 
@@ -48,8 +48,8 @@ describe("createFmpProvider", () => {
     });
 
     expect(result.error).toBe(false);
-    expect(result.data?.AAPL.periodResolved).toBe("quarterly");
-    expect(result.data?.AAPL.incomeStatements).toEqual([
+    expect(result.data?.AAPL?.periodResolved).toBe("quarterly");
+    expect(result.data?.AAPL?.incomeStatements).toEqual([
       { date: "2025-12-31", revenue: 100 },
     ]);
     expect(result.provenance).toHaveLength(3);
@@ -94,8 +94,8 @@ describe("createFmpProvider", () => {
     expect(result.message).toBe(
       "Quarterly FMP ratios are not available for this API plan; returned annual ratios instead.",
     );
-    expect(result.data?.MSFT.periodResolved).toBe("annual");
-    expect(result.data?.MSFT.records).toEqual([{ date: "2025-12-31", peRatio: 20 }]);
+    expect(result.data?.MSFT?.periodResolved).toBe("annual");
+    expect(result.data?.MSFT?.records).toEqual([{ date: "2025-12-31", peRatio: 20 }]);
   });
 
   it("falls back to annual segments when quarterly is blocked by FMP plan limits", async () => {

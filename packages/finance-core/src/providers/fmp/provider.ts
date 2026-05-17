@@ -3,7 +3,7 @@ import type { FinanceCoreResult, Period, ProvenanceRecord } from "../../types";
 
 const DEFAULT_FMP_STABLE_BASE_URL = "https://financialmodelingprep.com/stable";
 
-type FetchFn = typeof fetch;
+type FetchFn = (...args: Parameters<typeof fetch>) => ReturnType<typeof fetch>;
 
 type FmpResponse<T> = {
   data: T;
@@ -95,11 +95,9 @@ export type FmpProvider = {
 export function createFmpProvider(options: {
   apiKey?: string;
   fetchFn?: FetchFn;
-  baseUrl?: string;
   now?: () => Date;
 }): FmpProvider {
   const fetchFn = options.fetchFn ?? fetch;
-  const baseUrl = options.baseUrl ?? DEFAULT_FMP_STABLE_BASE_URL;
   const now = options.now ?? (() => new Date());
 
   function normalizeTicker(ticker: string): string {
@@ -115,7 +113,7 @@ export function createFmpProvider(options: {
   }
 
   function buildUrl(params: FmpRequestParams): string {
-    const url = new URL(`${baseUrl}${params.path}`);
+    const url = new URL(`${DEFAULT_FMP_STABLE_BASE_URL}${params.path}`);
     for (const [key, value] of Object.entries(params.query ?? {})) {
       if (value !== undefined) {
         url.searchParams.set(key, String(value));
