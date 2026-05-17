@@ -40,7 +40,11 @@ describe("createFmpProvider", () => {
       throw new Error(`Unexpected URL ${requestUrl}`);
     };
 
-    const fmp = createFmpProvider({ apiKey: "test-key", fetchFn, now: () => NOW });
+    const fmp = createFmpProvider({
+      apiKey: "test-key",
+      fetchFn,
+      now: () => NOW,
+    });
     const result = await fmp.fundamentals({
       ticker: " aapl ",
       period: "ttm",
@@ -82,7 +86,11 @@ describe("createFmpProvider", () => {
       return jsonResponse([{ date: "2025-12-31", peRatio: 20 }]);
     };
 
-    const fmp = createFmpProvider({ apiKey: "test-key", fetchFn, now: () => NOW });
+    const fmp = createFmpProvider({
+      apiKey: "test-key",
+      fetchFn,
+      now: () => NOW,
+    });
     const result = await fmp.ratios({
       ticker: "msft",
       period: "quarterly",
@@ -95,7 +103,9 @@ describe("createFmpProvider", () => {
       "Quarterly FMP ratios are not available for this API plan; returned annual ratios instead.",
     );
     expect(result.data?.MSFT?.periodResolved).toBe("annual");
-    expect(result.data?.MSFT?.records).toEqual([{ date: "2025-12-31", peRatio: 20 }]);
+    expect(result.data?.MSFT?.records).toEqual([
+      { date: "2025-12-31", peRatio: 20 },
+    ]);
   });
 
   it("falls back to annual segments when quarterly is blocked by FMP plan limits", async () => {
@@ -114,7 +124,11 @@ describe("createFmpProvider", () => {
       ]);
     };
 
-    const fmp = createFmpProvider({ apiKey: "test-key", fetchFn, now: () => NOW });
+    const fmp = createFmpProvider({
+      apiKey: "test-key",
+      fetchFn,
+      now: () => NOW,
+    });
     const result = await fmp.segments({
       ticker: "msft",
       period: "quarterly",

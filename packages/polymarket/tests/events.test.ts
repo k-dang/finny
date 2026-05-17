@@ -3,6 +3,35 @@ import {
   createPolymarketService,
   type GammaPolymarketClient,
 } from "../src/service";
+import type { PolymarketMarket } from "../src/types";
+
+function market(
+  overrides: Pick<PolymarketMarket, "id" | "closed" | "acceptingOrders">,
+): PolymarketMarket {
+  return {
+    conditionId: null,
+    slug: null,
+    question: null,
+    eventId: null,
+    outcomes: [],
+    outcomePrices: [],
+    active: true,
+    endDate: null,
+    volume: null,
+    volume24hr: null,
+    liquidity: null,
+    bestBid: null,
+    bestAsk: null,
+    spread: null,
+    oneHourPriceChange: null,
+    oneDayPriceChange: null,
+    oneWeekPriceChange: null,
+    oneMonthPriceChange: null,
+    lastTradePrice: null,
+    clobTokenIds: [],
+    ...overrides,
+  };
+}
 
 const emptyGammaClient: GammaPolymarketClient = {
   listEvents: async () => [],
@@ -27,16 +56,8 @@ describe("PolymarketService.activeEvents", () => {
             volume24hr: null,
             liquidity: 700,
             markets: [
-              {
-                id: "m1",
-                closed: false,
-                acceptingOrders: true,
-              },
-              {
-                id: "m2",
-                closed: true,
-                acceptingOrders: false,
-              },
+              market({ id: "m1", closed: false, acceptingOrders: true }),
+              market({ id: "m2", closed: true, acceptingOrders: false }),
             ],
           },
           {

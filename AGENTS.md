@@ -38,8 +38,6 @@ There is no dedicated test framework configured yet. Minimum quality gate for ev
 
 When adding tests, colocate with source as `*.test.ts`/`*.test.tsx` and wire a workspace `test` script.
 
-
-
 ## Source Code Reference
 
 Source code for dependencies is available in `opensrc/` for deeper understanding of implementation details.
@@ -58,4 +56,3 @@ npx opensrc pypi:<package>      # Python package (e.g., npx opensrc pypi:request
 npx opensrc crates:<package>    # Rust crate (e.g., npx opensrc crates:serde)
 npx opensrc <owner>/<repo>      # GitHub repo (e.g., npx opensrc vercel/ai)
 ```
-

@@ -1,4 +1,11 @@
-import { ASSISTANT, BORDER, MUTED, PANEL, SYSTEM, styles } from "@/chat/tui/theme";
+import {
+  ASSISTANT,
+  BORDER,
+  MUTED,
+  PANEL,
+  SYSTEM,
+  styles,
+} from "@/chat/tui/theme";
 
 type ChatHeaderProps = {
   focusLabel: string;

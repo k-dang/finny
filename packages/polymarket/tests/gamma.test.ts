@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { listEvents, listMarkets, normalizeMarket } from "../src/gamma";
 import { PolymarketApiError } from "../src/http";
+import type { FetchLike } from "../src/types";
 
 type FetchCall = {
   url: string;
@@ -78,7 +79,7 @@ describe("normalizeMarket", () => {
 describe("listMarkets/listEvents", () => {
   it("passes mapped query params to markets endpoint", async () => {
     const calls: FetchCall[] = [];
-    const fetchFn: typeof fetch = async (input, init) => {
+    const fetchFn: FetchLike = async (input, init) => {
       calls.push({ url: String(input), init });
       return jsonResponse([]);
     };
@@ -112,7 +113,7 @@ describe("listMarkets/listEvents", () => {
 
   it("passes mapped query params to events endpoint", async () => {
     const calls: FetchCall[] = [];
-    const fetchFn: typeof fetch = async (input, init) => {
+    const fetchFn: FetchLike = async (input, init) => {
       calls.push({ url: String(input), init });
       return jsonResponse([]);
     };
@@ -138,7 +139,7 @@ describe("listMarkets/listEvents", () => {
   });
 
   it("throws when markets payload is not an array", async () => {
-    const fetchFn: typeof fetch = async () => jsonResponse({ not: "array" });
+    const fetchFn: FetchLike = async () => jsonResponse({ not: "array" });
 
     await expect(listMarkets({ fetchFn })).rejects.toThrow(
       new PolymarketApiError("Unexpected markets response format."),
@@ -146,7 +147,7 @@ describe("listMarkets/listEvents", () => {
   });
 
   it("throws when events payload is not an array", async () => {
-    const fetchFn: typeof fetch = async () => jsonResponse({ not: "array" });
+    const fetchFn: FetchLike = async () => jsonResponse({ not: "array" });
 
     await expect(listEvents({ fetchFn })).rejects.toThrow(
       new PolymarketApiError("Unexpected events response format."),

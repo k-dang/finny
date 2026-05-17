@@ -124,7 +124,9 @@ export function createFmpProvider(options: {
     return url.toString();
   }
 
-  async function requestJson<T>(params: FmpRequestParams): Promise<FmpResponse<T>> {
+  async function requestJson<T>(
+    params: FmpRequestParams,
+  ): Promise<FmpResponse<T>> {
     const url = buildUrl(params);
     const response = await fetchFn(url);
 
@@ -209,7 +211,9 @@ export function createFmpProvider(options: {
           }),
         ]);
         const asOfDate =
-          firstDate(income.data) ?? firstDate(balance.data) ?? firstDate(cashFlow.data);
+          firstDate(income.data) ??
+          firstDate(balance.data) ??
+          firstDate(cashFlow.data);
 
         return okResult(
           {
@@ -256,7 +260,10 @@ export function createFmpProvider(options: {
               },
             });
           } catch (error) {
-            if (requestedPeriod === "quarterly" && isPlanLimitPeriodError(error)) {
+            if (
+              requestedPeriod === "quarterly" &&
+              isPlanLimitPeriodError(error)
+            ) {
               response = await requestJson<FmpRatioRecord[]>({
                 path: "/ratios",
                 query: { symbol: ticker, period: "annual", limit: input.limit },

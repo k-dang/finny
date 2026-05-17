@@ -8,6 +8,7 @@ import {
   PolymarketApiError,
   requestPolymarketJson,
 } from "../src/http";
+import type { FetchLike } from "../src/types";
 
 describe("buildUrl", () => {
   it("normalizes base/path and sets query params", () => {
@@ -44,7 +45,7 @@ describe("coercion helpers", () => {
 
 describe("requestPolymarketJson", () => {
   it("returns parsed JSON on ok response", async () => {
-    const fetchFn: typeof fetch = async () =>
+    const fetchFn: FetchLike = async () =>
       new Response('{"ok":true}', { status: 200 });
 
     const payload = await requestPolymarketJson<{ ok: boolean }>({
@@ -56,7 +57,7 @@ describe("requestPolymarketJson", () => {
   });
 
   it("throws on non-ok responses", async () => {
-    const fetchFn: typeof fetch = async () =>
+    const fetchFn: FetchLike = async () =>
       new Response("server error", { status: 500 });
 
     await expect(
@@ -72,7 +73,7 @@ describe("requestPolymarketJson", () => {
   });
 
   it("throws on invalid JSON", async () => {
-    const fetchFn: typeof fetch = async () =>
+    const fetchFn: FetchLike = async () =>
       new Response("not-json", {
         status: 200,
         headers: { "content-type": "application/json" },
@@ -91,7 +92,7 @@ describe("requestPolymarketJson", () => {
   });
 
   it("wraps fetch failures", async () => {
-    const fetchFn: typeof fetch = async () => {
+    const fetchFn: FetchLike = async () => {
       throw new Error("network down");
     };
 

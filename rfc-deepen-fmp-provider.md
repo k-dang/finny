@@ -134,7 +134,7 @@ The module should not expose an HTTP client or request-plan framework publicly. 
 The only public construction dependency should be:
 
 ```ts
-createFmpProvider({ apiKey, fetchFn, now })
+createFmpProvider({ apiKey, fetchFn, now });
 ```
 
 ## Testing Strategy

@@ -6,11 +6,7 @@ import { ChatHeader } from "@/chat/tui/components/ChatHeader";
 import { ComposerPane } from "@/chat/tui/components/ComposerPane";
 import { ConversationPane } from "@/chat/tui/components/ConversationPane";
 import { TracePane } from "@/chat/tui/components/TracePane";
-import {
-  BACKGROUND,
-  type FocusTarget,
-  styles,
-} from "@/chat/tui/theme";
+import { BACKGROUND, type FocusTarget, styles } from "@/chat/tui/theme";
 import { useChatKeyboard } from "@/chat/tui/useChatKeyboard";
 import { useChatSession } from "@/chat/tui/useChatSession";
 import { useComposerGuard } from "@/chat/tui/useComposerGuard";

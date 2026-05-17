@@ -14,7 +14,11 @@ export function TraceCard({ trace }: { trace: TraceEntry }) {
       }}
     >
       {trace.lines.map((line, index) => (
-        <text key={`${trace.id}-${index}`} content={line} style={{ fg: tone }} />
+        <text
+          key={`${trace.id}-${index}`}
+          content={line}
+          style={{ fg: tone }}
+        />
       ))}
     </box>
   );

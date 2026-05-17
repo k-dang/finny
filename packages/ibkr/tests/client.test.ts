@@ -116,7 +116,9 @@ describe("createIbkrClient", () => {
   it("surfaces HTTP errors with status and body", async () => {
     const client = createIbkrClient({
       fetchFn: (async () =>
-        new Response("gateway down", { status: 502 })) as unknown as typeof fetch,
+        new Response("gateway down", {
+          status: 502,
+        })) as unknown as typeof fetch,
     });
 
     await expect(client.getAccounts()).rejects.toThrow(
