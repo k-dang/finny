@@ -1,4 +1,7 @@
-export type FetchLike = typeof fetch;
+export type FetchLike = (
+  input: Parameters<typeof fetch>[0],
+  init?: Parameters<typeof fetch>[1],
+) => Promise<Response>;
 
 export type ListMarketsParams = {
   limit?: number;

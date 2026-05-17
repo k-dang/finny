@@ -1,11 +1,12 @@
 import {
   DEFAULT_EVENTS_LIMIT,
   DEFAULT_MARKETS_LIMIT,
-  listPolymarketActiveEvents,
-  listPolymarketMarkets,
+  createPolymarketService,
   type PolymarketActiveEventsResult,
   type PolymarketMarketsResult,
 } from "@repo/polymarket";
+
+const polymarketService = createPolymarketService();
 import type { Command } from "commander";
 
 type PolymarketMarketsOptions = {
@@ -52,7 +53,7 @@ export function registerPolymarketCommand(program: Command): void {
     .option("--minimal", "Output minified JSON", false)
     .action(async (options: PolymarketEventsOptions) => {
       await runAndOutput(
-        listPolymarketActiveEvents({
+        polymarketService.activeEvents({
           query: options.query,
           limit: options.limit,
           minVolume: options.minVolume,
@@ -96,7 +97,7 @@ export function registerPolymarketCommand(program: Command): void {
     .option("--minimal", "Output minified JSON", false)
     .action(async (options: PolymarketMarketsOptions) => {
       await runAndOutput(
-        listPolymarketMarkets({
+        polymarketService.markets({
           query: options.query,
           limit: options.limit,
           minVolume: options.minVolume,

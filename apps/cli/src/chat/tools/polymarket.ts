@@ -1,8 +1,7 @@
 import {
   DEFAULT_EVENTS_LIMIT,
   DEFAULT_MARKETS_LIMIT,
-  listPolymarketActiveEvents,
-  listPolymarketMarkets,
+  createPolymarketService,
   MAX_EVENTS_LIMIT,
   MAX_MARKETS_LIMIT,
 } from "@repo/polymarket";
@@ -11,6 +10,13 @@ import { z } from "zod";
 
 const TOOL_MAX_EVENTS_LIMIT = Math.min(30, MAX_EVENTS_LIMIT);
 const TOOL_MAX_MARKETS_LIMIT = Math.min(50, MAX_MARKETS_LIMIT);
+
+const polymarket = createPolymarketService({
+  limits: {
+    events: { max: TOOL_MAX_EVENTS_LIMIT },
+    markets: { max: TOOL_MAX_MARKETS_LIMIT },
+  },
+});
 
 function createActiveEventsInputSchema(maxLimit: number) {
   return z
@@ -89,7 +95,7 @@ export const polymarketTools = {
       "List current active Polymarket events (active=true and closed=false), with optional text and liquidity filters.",
     inputSchema: polymarketActiveEventsToolInputSchema,
     execute: async (input) => {
-      return listPolymarketActiveEvents(input);
+      return polymarket.activeEvents(input);
     },
   }),
 
@@ -98,7 +104,7 @@ export const polymarketTools = {
       "List Polymarket markets with raw pricing and momentum fields used for microstructure analysis.",
     inputSchema: polymarketMarketsToolInputSchema,
     execute: async (input) => {
-      return listPolymarketMarkets(input);
+      return polymarket.markets(input);
     },
   }),
 };

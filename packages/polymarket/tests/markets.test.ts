@@ -1,62 +1,100 @@
-import { afterEach, describe, expect, it } from "bun:test";
-import { listPolymarketMarkets } from "../src/markets";
+import { describe, expect, it } from "bun:test";
+import {
+  createPolymarketService,
+  type GammaPolymarketClient,
+} from "../src/service";
 
-const originalFetch = globalThis.fetch;
+const emptyGammaClient: GammaPolymarketClient = {
+  listEvents: async () => [],
+  listMarkets: async () => [],
+};
 
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "content-type": "application/json" },
-  });
-}
-
-afterEach(() => {
-  globalThis.fetch = originalFetch;
-});
-
-describe("listPolymarketMarkets", () => {
+describe("PolymarketService.markets", () => {
   it("applies filters and computes midpoint/spreadBps", async () => {
-    globalThis.fetch = async () =>
-      jsonResponse([
-        {
-          id: "m1",
-          slug: "fed-rates-up",
-          question: "Fed rates up?",
-          active: true,
-          closed: false,
-          acceptingOrders: true,
-          clobTokenIds: '["1"]',
-          bestBid: 0.42,
-          bestAsk: 0.46,
-          spread: null,
-        },
-        {
-          id: "m2",
-          slug: "fed-rates-down",
-          question: "Fed rates down?",
-          active: true,
-          closed: false,
-          acceptingOrders: true,
-          clobTokenIds: '["2"]',
-          bestBid: 0.49,
-          bestAsk: 0.52,
-          spread: 0.03,
-        },
-        {
-          id: "m3",
-          slug: "no-token-ids",
-          question: "Ignore this one",
-          active: true,
-          closed: false,
-          acceptingOrders: true,
-          clobTokenIds: "[]",
-          bestBid: 0.1,
-          bestAsk: 0.2,
-          spread: null,
-        },
-      ]);
+    const service = createPolymarketService({
+      gammaClient: {
+        ...emptyGammaClient,
+        listMarkets: async () => [
+          {
+            id: "m1",
+            conditionId: null,
+            slug: "fed-rates-up",
+            question: "Fed rates up?",
+            eventId: null,
+            outcomes: [],
+            outcomePrices: [],
+            active: true,
+            closed: false,
+            acceptingOrders: true,
+            endDate: null,
+            volume: null,
+            volume24hr: null,
+            liquidity: null,
+            bestBid: 0.42,
+            bestAsk: 0.46,
+            spread: null,
+            oneHourPriceChange: null,
+            oneDayPriceChange: null,
+            oneWeekPriceChange: null,
+            oneMonthPriceChange: null,
+            lastTradePrice: null,
+            clobTokenIds: ["1"],
+          },
+          {
+            id: "m2",
+            conditionId: null,
+            slug: "fed-rates-down",
+            question: "Fed rates down?",
+            eventId: null,
+            outcomes: [],
+            outcomePrices: [],
+            active: true,
+            closed: false,
+            acceptingOrders: true,
+            endDate: null,
+            volume: null,
+            volume24hr: null,
+            liquidity: null,
+            bestBid: 0.49,
+            bestAsk: 0.52,
+            spread: 0.03,
+            oneHourPriceChange: null,
+            oneDayPriceChange: null,
+            oneWeekPriceChange: null,
+            oneMonthPriceChange: null,
+            lastTradePrice: null,
+            clobTokenIds: ["2"],
+          },
+          {
+            id: "m3",
+            conditionId: null,
+            slug: "no-token-ids",
+            question: "Ignore this one",
+            eventId: null,
+            outcomes: [],
+            outcomePrices: [],
+            active: true,
+            closed: false,
+            acceptingOrders: true,
+            endDate: null,
+            volume: null,
+            volume24hr: null,
+            liquidity: null,
+            bestBid: 0.1,
+            bestAsk: 0.2,
+            spread: null,
+            oneHourPriceChange: null,
+            oneDayPriceChange: null,
+            oneWeekPriceChange: null,
+            oneMonthPriceChange: null,
+            lastTradePrice: null,
+            clobTokenIds: [],
+          },
+        ],
+      },
+    });
 
-    const result = await listPolymarketMarkets({
+    const result = await service.markets({
       query: "fed rates",
       activeOnly: true,
       acceptingOrdersOnly: true,
@@ -81,23 +119,40 @@ describe("listPolymarketMarkets", () => {
   });
 
   it("returns null spreadBps/midpoint when bid/ask data is incomplete", async () => {
-    globalThis.fetch = async () =>
-      jsonResponse([
-        {
-          id: "m4",
-          slug: "incomplete",
-          question: "Incomplete",
-          active: true,
-          closed: false,
-          acceptingOrders: true,
-          clobTokenIds: '["4"]',
-          bestBid: null,
-          bestAsk: 0.6,
-          spread: null,
-        },
-      ]);
+    const service = createPolymarketService({
+      gammaClient: {
+        ...emptyGammaClient,
+        listMarkets: async () => [
+          {
+            id: "m4",
+            conditionId: null,
+            slug: "incomplete",
+            question: "Incomplete",
+            eventId: null,
+            outcomes: [],
+            outcomePrices: [],
+            active: true,
+            closed: false,
+            acceptingOrders: true,
+            endDate: null,
+            volume: null,
+            volume24hr: null,
+            liquidity: null,
+            bestBid: null,
+            bestAsk: 0.6,
+            spread: null,
+            oneHourPriceChange: null,
+            oneDayPriceChange: null,
+            oneWeekPriceChange: null,
+            oneMonthPriceChange: null,
+            lastTradePrice: null,
+            clobTokenIds: ["4"],
+          },
+        ],
+      },
+    });
 
-    const result = await listPolymarketMarkets({});
+    const result = await service.markets({});
     expect(result.ok).toBe(true);
     if (!result.ok) {
       throw new Error("expected success");
@@ -108,19 +163,21 @@ describe("listPolymarketMarkets", () => {
   });
 
   it("returns error result for invalid input", async () => {
-    const invalidLimit = await listPolymarketMarkets({ limit: 0 });
+    const service = createPolymarketService({ gammaClient: emptyGammaClient });
+
+    const invalidLimit = await service.markets({ limit: 0 });
     expect(invalidLimit).toEqual({
       ok: false,
       error: "limit must be a positive integer.",
     });
 
-    const invalidMin = await listPolymarketMarkets({ minLiquidity: -1 });
+    const invalidMin = await service.markets({ minLiquidity: -1 });
     expect(invalidMin).toEqual({
       ok: false,
       error: "minVolume and minLiquidity must be non-negative numbers.",
     });
 
-    const invalidMax = await listPolymarketMarkets({ limit: 101 });
+    const invalidMax = await service.markets({ limit: 101 });
     expect(invalidMax).toEqual({
       ok: false,
       error: "limit must be <= 100.",
