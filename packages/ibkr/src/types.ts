@@ -31,6 +31,7 @@ export type IbkrClient = {
   getAccounts: () => Promise<string[]>;
   getAccountSummary: (accountId: string) => Promise<Record<string, unknown>>;
   getPositions: (accountId: string) => Promise<Record<string, unknown>[]>;
+  getContractDetails: (conids: (string | number)[]) => Promise<Record<string, unknown>[]>;
   getOrders: (query?: IbkrOrderQuery) => Promise<Record<string, unknown>>;
   getTransactions: (
     query: IbkrTransactionQuery,

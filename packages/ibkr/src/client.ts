@@ -116,6 +116,17 @@ export function createIbkrClient(options: IbkrRequestOptions = {}): IbkrClient {
     return payload;
   };
 
+  const getContractDetails = async (
+    conids: (string | number)[],
+  ): Promise<Record<string, unknown>[]> => {
+    if (conids.length === 0) return [];
+    const payload = await get(`/v1/api/trsrv/secdef?conids=${conids.join(",")}`);
+    if (isRecord(payload) && Array.isArray(payload.secdef)) {
+      return payload.secdef.filter(isRecord);
+    }
+    throw new IbkrClientError("Unexpected contract details response format.");
+  };
+
   const getPositions = async (
     accountId: string,
   ): Promise<Record<string, unknown>[]> => {
@@ -206,6 +217,7 @@ export function createIbkrClient(options: IbkrRequestOptions = {}): IbkrClient {
     getAccounts,
     getAccountSummary,
     getPositions,
+    getContractDetails,
     getOrders,
     getTransactions,
     searchContracts,
