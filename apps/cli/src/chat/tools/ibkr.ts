@@ -1,4 +1,4 @@
-import { createIbkrClient } from "@repo/ibkr";
+import { createIbkrPortfolioService } from "@repo/ibkr";
 import { tool } from "ai";
 import { z } from "zod";
 
@@ -43,33 +43,17 @@ type IbkrPortfolioSnapshotSuccess = {
   positions?: Record<string, unknown>[];
 };
 
-function toRecoverableError(error: unknown): IbkrToolError | null {
-  const message = error instanceof Error ? error.message : String(error);
-  const normalized = message.toLowerCase();
+function toToolError(result: {
+  code: string;
+  message: string;
+}): IbkrToolError {
+  const code =
+    result.code === "authentication_required" ||
+    result.code === "gateway_unreachable"
+      ? result.code
+      : "request_failed";
 
-  if (
-    normalized.includes("not authenticated") ||
-    normalized.includes("auth") ||
-    normalized.includes("401") ||
-    normalized.includes("403")
-  ) {
-    return {
-      ok: false,
-      code: "authentication_required",
-      error:
-        "IBKR authentication required. Log in to TWS/IB Gateway and keep Client Portal running.",
-    };
-  }
-
-  if (normalized.includes("unable to reach ibkr gateway")) {
-    return {
-      ok: false,
-      code: "gateway_unreachable",
-      error: message,
-    };
-  }
-
-  return null;
+  return { ok: false, code, error: result.message };
 }
 
 export const ibkrTools = {
@@ -78,31 +62,18 @@ export const ibkrTools = {
       "List available IBKR account IDs. Call this first when the user wants an IBKR portfolio snapshot and the account is unknown.",
     inputSchema: ibkrListAccountsInputSchema,
     execute: async (): Promise<IbkrListAccountsSuccess | IbkrToolError> => {
-      try {
-        const client = createIbkrClient();
-        const accounts = await client.getAccounts();
+      const result = await createIbkrPortfolioService().accounts();
+      if (!result.ok) return toToolError(result);
 
-        if (accounts.length === 0) {
-          return {
-            ok: false,
-            code: "request_failed",
-            error: "No IBKR accounts available.",
-          };
-        }
-
-        return {
-          ok: true,
-          accounts,
-          note:
-            accounts.length > 1
-              ? "Multiple accounts found. Pass the chosen accountId to ibkr_portfolio_snapshot."
-              : undefined,
-        };
-      } catch (error) {
-        const recoverable = toRecoverableError(error);
-        if (recoverable) return recoverable;
-        throw error;
-      }
+      const accounts = result.data.accounts;
+      return {
+        ok: true,
+        accounts,
+        note:
+          accounts.length > 1
+            ? "Multiple accounts found. Pass the chosen accountId to ibkr_portfolio_snapshot."
+            : undefined,
+      };
     },
   }),
 
@@ -124,26 +95,18 @@ export const ibkrTools = {
         };
       }
 
-      const client = createIbkrClient();
+      const result = await createIbkrPortfolioService().snapshot({
+        accountId: normalizedAccountId,
+        includePositions: includePositions === true,
+      });
+      if (!result.ok) return toToolError(result);
 
-      try {
-        const summary = await client.getAccountSummary(normalizedAccountId);
-        const shouldIncludePositions = includePositions === true;
-        const positions = shouldIncludePositions
-          ? await client.getPositions(normalizedAccountId)
-          : undefined;
-
-        return {
-          ok: true,
-          accountId: normalizedAccountId,
-          summary,
-          positions,
-        };
-      } catch (error) {
-        const recoverable = toRecoverableError(error);
-        if (recoverable) return recoverable;
-        throw error;
-      }
+      return {
+        ok: true,
+        accountId: result.data.accountId,
+        summary: result.data.summary,
+        positions: result.data.positions,
+      };
     },
   }),
 };

@@ -1,14 +1,11 @@
-export {
-  createIbkrClient,
-  extractAccounts,
-  IbkrClientError,
-  isAuthenticatedPayload,
-  normalizeAccounts,
-} from "./client";
+export { createIbkrPortfolioService, IbkrGatewayError } from "./portfolio";
 export type {
-  IbkrClient,
-  IbkrContractSearchQuery,
-  IbkrOrderQuery,
-  IbkrRequestOptions,
-  IbkrTransactionQuery,
-} from "./types";
+  IbkrAccountList,
+  IbkrBalanceSummary,
+  IbkrGatewayOptions,
+  IbkrGatewayPort,
+  IbkrPortfolioService,
+  IbkrPortfolioSnapshot,
+  IbkrResult,
+  IbkrStockPosition,
+} from "./portfolio";
