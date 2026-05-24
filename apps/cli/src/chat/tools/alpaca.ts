@@ -1,6 +1,6 @@
 import {
-  getLatestPrices,
-  getOptionChain,
+  createAlpacaMarketDataClient,
+  createAlpacaMarketDataService,
   type AlpacaCredentials,
   type NormalizedOption,
   type NormalizedPrice,
@@ -30,10 +30,6 @@ type AlpacaOptionsToolSuccess = {
   contracts: NormalizedOption[];
 };
 
-function formatError(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
-
 function getCredentials(): AlpacaCredentials {
   const key = process.env.ALPACA_API_KEY;
   const secret = process.env.ALPACA_API_SECRET;
@@ -45,6 +41,13 @@ function getCredentials(): AlpacaCredentials {
   }
 
   return { key, secret };
+}
+
+function createMarketDataService() {
+  return createAlpacaMarketDataService({
+    client: createAlpacaMarketDataClient({ credentials: getCredentials() }),
+    defaults: { optionLimit: DEFAULT_OPTIONS_LIMIT },
+  });
 }
 
 function normalizeSymbol(symbol: string): string {
@@ -128,38 +131,24 @@ export const alpacaTools = {
       symbols,
       feed,
     }): Promise<AlpacaPriceToolSuccess | AlpacaToolError> => {
-      try {
-        const credentials = getCredentials();
-        const normalized = await getLatestPrices({
-          symbols,
-          feed,
-          credentials,
-        });
+      const result = await createMarketDataService().latestPrices({
+        symbols,
+        feed,
+      });
 
-        const prices: Record<string, NormalizedPrice | null> = {};
-        const warnings: string[] = [];
-
-        for (const symbol of symbols) {
-          if (normalized[symbol]) {
-            prices[symbol] = normalized[symbol];
-          } else {
-            prices[symbol] = null;
-            warnings.push(`No latest trade found for ${symbol}.`);
-          }
-        }
-
-        return {
-          ok: true,
-          symbols,
-          prices,
-          warnings,
-        };
-      } catch (error) {
+      if (!result.ok) {
         return {
           ok: false,
-          error: formatError(error),
+          error: result.error,
         };
       }
+
+      return {
+        ok: true,
+        symbols: result.data.symbols,
+        prices: result.data.prices,
+        warnings: result.warnings,
+      };
     },
   }),
 
@@ -173,27 +162,25 @@ export const alpacaTools = {
       type,
       limit,
     }): Promise<AlpacaOptionsToolSuccess | AlpacaToolError> => {
-      try {
-        const credentials = getCredentials();
-        const contracts = await getOptionChain({
-          underlying: symbol,
-          expiration,
-          type,
-          limit: limit ?? DEFAULT_OPTIONS_LIMIT,
-          credentials,
-        });
+      const result = await createMarketDataService().optionChain({
+        underlying: symbol,
+        expiration,
+        type,
+        limit,
+      });
 
-        return {
-          ok: true,
-          underlying: symbol,
-          contracts,
-        };
-      } catch (error) {
+      if (!result.ok) {
         return {
           ok: false,
-          error: formatError(error),
+          error: result.error,
         };
       }
+
+      return {
+        ok: true,
+        underlying: result.data.underlying,
+        contracts: result.data.contracts,
+      };
     },
   }),
 };

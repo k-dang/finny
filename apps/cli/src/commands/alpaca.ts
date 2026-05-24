@@ -1,6 +1,6 @@
 import {
-  getLatestPrices,
-  getOptionChain,
+  createAlpacaMarketDataClient,
+  createAlpacaMarketDataService,
   type NormalizedOption,
   type NormalizedPrice,
 } from "@repo/alpaca";
@@ -23,6 +23,12 @@ type OptionsPayload = {
   contracts: NormalizedOption[];
 };
 
+function createMarketDataService() {
+  return createAlpacaMarketDataService({
+    client: createAlpacaMarketDataClient({ credentials: getCredentials() }),
+  });
+}
+
 export function registerAlpacaCommand(program: Command): void {
   const alpaca = program
     .command("alpaca")
@@ -40,8 +46,6 @@ export function registerAlpacaCommand(program: Command): void {
         options: { symbols?: string; minimal?: boolean },
       ) => {
         try {
-          const credentials = getCredentials();
-
           const allSymbols = parseSymbols([
             ...symbols,
             ...(options.symbols ? [options.symbols] : []),
@@ -51,24 +55,21 @@ export function registerAlpacaCommand(program: Command): void {
             throw new Error("Please provide at least one symbol.");
           }
 
-          const normalized = await getLatestPrices({
+          const result = await createMarketDataService().latestPrices({
             symbols: allSymbols,
-            credentials,
           });
-          const prices: PricesPayload["prices"] = {};
 
-          for (const symbol of allSymbols) {
-            if (normalized[symbol]) {
-              prices[symbol] = normalized[symbol];
-            } else {
-              prices[symbol] = null;
-              console.error(`Warning: no latest trade found for ${symbol}.`);
-            }
+          if (!result.ok) {
+            throw new Error(result.error);
+          }
+
+          for (const warning of result.warnings) {
+            console.error(`Warning: ${warning}`);
           }
 
           const payload: PricesPayload = {
-            symbols: allSymbols,
-            prices,
+            symbols: result.data.symbols,
+            prices: result.data.prices,
           };
 
           outputJson(payload, options.minimal ?? false);
@@ -108,21 +109,23 @@ export function registerAlpacaCommand(program: Command): void {
         },
       ) => {
         try {
-          const credentials = getCredentials();
           const underlying = symbol.toUpperCase();
           const optionType = parseOptionType(options.type);
 
-          const contracts = await getOptionChain({
+          const result = await createMarketDataService().optionChain({
             underlying,
             expiration: options.expiration,
             type: optionType,
             limit: options.limit,
-            credentials,
           });
 
+          if (!result.ok) {
+            throw new Error(result.error);
+          }
+
           const payload: OptionsPayload = {
-            underlying,
-            contracts,
+            underlying: result.data.underlying,
+            contracts: result.data.contracts,
           };
 
           outputJson(payload, options.minimal ?? false);
