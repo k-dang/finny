@@ -19,6 +19,6 @@ export type {
 } from "./types";
 
 export {
-  createAlpacaMarketDataClient,
+  createAlpacaClient,
   createAlpacaMarketDataService,
 } from "./service";

@@ -1,5 +1,5 @@
 import {
-  createAlpacaMarketDataClient,
+  createAlpacaClient,
   createAlpacaMarketDataService,
   type NormalizedOption,
   type NormalizedPrice,
@@ -25,7 +25,7 @@ type OptionsPayload = {
 
 function createMarketDataService() {
   return createAlpacaMarketDataService({
-    client: createAlpacaMarketDataClient({ credentials: getCredentials() }),
+    client: createAlpacaClient({ credentials: getCredentials() }),
   });
 }
 

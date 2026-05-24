@@ -1,10 +1,13 @@
 import type { AlpacaCredentials } from "./types";
 
+export type AlpacaFetchFn = typeof fetch;
+
 export async function requestAlpacaJson<T>(
   url: string,
   credentials: AlpacaCredentials,
+  fetchFn: AlpacaFetchFn = fetch,
 ): Promise<T> {
-  const response = await fetch(url, {
+  const response = await fetchFn(url, {
     headers: {
       "APCA-API-KEY-ID": credentials.key,
       "APCA-API-SECRET-KEY": credentials.secret,

@@ -1,5 +1,5 @@
 import {
-  createAlpacaMarketDataClient,
+  createAlpacaClient,
   createAlpacaMarketDataService,
   type AlpacaCredentials,
   type NormalizedOption,
@@ -45,7 +45,7 @@ function getCredentials(): AlpacaCredentials {
 
 function createMarketDataService() {
   return createAlpacaMarketDataService({
-    client: createAlpacaMarketDataClient({ credentials: getCredentials() }),
+    client: createAlpacaClient({ credentials: getCredentials() }),
     defaults: { optionLimit: DEFAULT_OPTIONS_LIMIT },
   });
 }

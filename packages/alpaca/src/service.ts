@@ -11,6 +11,7 @@ import type {
   OptionType,
   StockSnapshotsResponse,
 } from "./types";
+import { requestAlpacaJson, type AlpacaFetchFn } from "./http";
 
 const DEFAULT_STOCKS_DATA_BASE_URL = "https://data.alpaca.markets/v2";
 const DEFAULT_OPTIONS_DATA_BASE_URL = "https://data.alpaca.markets/v1beta1";
@@ -90,6 +91,7 @@ export function createAlpacaMarketDataService(options: {
     optionLimit?: number;
   };
 }): AlpacaMarketDataService {
+  const { client } = options;
   const stockFeed = options.defaults?.stockFeed ?? DEFAULT_STOCK_FEED;
   const optionLimit = options.defaults?.optionLimit ?? DEFAULT_OPTION_LIMIT;
 
@@ -101,7 +103,7 @@ export function createAlpacaMarketDataService(options: {
       }
 
       return withResult(async () => {
-        const response = await options.client.latestTrades({
+        const response = await client.latestTrades({
           symbols,
           feed: input.feed ?? stockFeed,
         });
@@ -127,7 +129,7 @@ export function createAlpacaMarketDataService(options: {
       }
 
       return withResult(async () => {
-        const response = await options.client.stockSnapshots({
+        const response = await client.stockSnapshots({
           symbols,
           feed: input.feed ?? stockFeed,
         });
@@ -153,7 +155,7 @@ export function createAlpacaMarketDataService(options: {
       }
 
       return withResult(async () => {
-        const response = await options.client.optionChain({
+        const response = await client.optionChain({
           underlying,
           expiration: input.expiration,
           type: input.type,
@@ -175,31 +177,21 @@ export function createAlpacaMarketDataService(options: {
       }
 
       return withResult(async () => {
-        const asset = await options.client.asset({ symbol });
+        const asset = await client.asset({ symbol });
         return { asset: normalizeAsset(asset), warnings: [] };
       });
     },
   };
 }
 
-export function createAlpacaMarketDataClient(options: {
+export function createAlpacaClient(options: {
   credentials: AlpacaCredentials;
+  fetchFn?: AlpacaFetchFn;
 }): AlpacaMarketDataClient {
-  async function requestJson<T>(url: string): Promise<T> {
-    const response = await fetch(url, {
-      headers: {
-        "APCA-API-KEY-ID": options.credentials.key,
-        "APCA-API-SECRET-KEY": options.credentials.secret,
-      },
-    });
+  const fetchFn = options.fetchFn ?? fetch;
 
-    if (!response.ok) {
-      const body = await response.text();
-      throw new Error(`Alpaca API error ${response.status}: ${body}`);
-    }
-
-    return (await response.json()) as T;
-  }
+  const requestJson = <T>(url: string): Promise<T> =>
+    requestAlpacaJson<T>(url, options.credentials, fetchFn);
 
   return {
     latestTrades(input) {
