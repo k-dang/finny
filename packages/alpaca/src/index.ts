@@ -2,23 +2,15 @@ export type {
   AlpacaMarketDataClient,
   AlpacaMarketDataService,
   AlpacaResult,
-  AssetPayload,
   LatestPricesPayload,
   OptionChainPayload,
-  StockSnapshotsPayload,
 } from "./service";
 
 export type {
-  AlpacaAsset,
   AlpacaCredentials,
-  NormalizedAsset,
   NormalizedOption,
   NormalizedPrice,
-  NormalizedStockSnapshot,
   OptionType,
 } from "./types";
 
-export {
-  createAlpacaClient,
-  createAlpacaMarketDataService,
-} from "./service";
+export { createAlpacaClient, createAlpacaMarketDataService } from "./service";

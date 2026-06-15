@@ -10,9 +10,7 @@ function createFakeClient(
 ): AlpacaMarketDataClient {
   return {
     latestTrades: async () => ({ trades: {} }),
-    stockSnapshots: async () => ({}),
     optionChain: async () => ({ snapshots: {} }),
-    asset: async ({ symbol }) => ({ symbol, tradable: true }),
     ...overrides,
   };
 }
@@ -54,34 +52,6 @@ describe("createAlpacaMarketDataService", () => {
       },
       warnings: ["No latest trade found for MSFT."],
     });
-  });
-
-  it("applies stock snapshot defaults and missing warnings", async () => {
-    const calls: Array<{ symbols: string[]; feed: string }> = [];
-    const service = createAlpacaMarketDataService({
-      defaults: { stockFeed: "sip" },
-      client: createFakeClient({
-        stockSnapshots: async (input) => {
-          calls.push(input);
-          return {
-            TSLA: {
-              latestTrade: { t: "2024-01-02T00:00:00Z", p: 250, x: "V" },
-            },
-          };
-        },
-      }),
-    });
-
-    const result = await service.stockSnapshots({
-      symbols: ["tsla", "nvda"],
-    });
-
-    expect(calls).toEqual([{ symbols: ["TSLA", "NVDA"], feed: "sip" }]);
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.data.snapshots.NVDA).toBeNull();
-      expect(result.warnings).toEqual(["No stock snapshot found for NVDA."]);
-    }
   });
 
   it("normalizes option chain input and applies the default limit", async () => {
@@ -152,18 +122,69 @@ describe("createAlpacaMarketDataService", () => {
 
     const throwingService = createAlpacaMarketDataService({
       client: createFakeClient({
-        asset: async () => {
+        optionChain: async () => {
           throw new Error("network down");
         },
       }),
     });
 
-    expect(await throwingService.asset({ symbol: "AAPL" })).toEqual({
+    expect(await throwingService.optionChain({ underlying: "AAPL" })).toEqual({
       ok: false,
       error: "network down",
     });
   });
 
+  it("warns when the option chain is truncated", async () => {
+    const service = createAlpacaMarketDataService({
+      defaults: { optionLimit: 1 },
+      client: createFakeClient({
+        optionChain: async () => ({
+          snapshots: {
+            AAPL240216C00185000: {
+              latestTrade: { p: 2.55, s: 5, t: "2024-01-15T09:55:00Z" },
+            },
+          },
+          next_page_token: "next",
+        }),
+      }),
+    });
+
+    const result = await service.optionChain({ underlying: "AAPL" });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.warnings).toEqual([
+        "Option chain truncated at 1 contracts; more available.",
+      ]);
+    }
+  });
+
+  it("maps rho from greeks onto the normalized contract", async () => {
+    const service = createAlpacaMarketDataService({
+      client: createFakeClient({
+        optionChain: async () => ({
+          snapshots: {
+            AAPL240216C00185000: {
+              greeks: {
+                delta: 0.5,
+                gamma: 0.1,
+                theta: -0.2,
+                vega: 0.3,
+                rho: 0.42,
+              },
+            },
+          },
+        }),
+      }),
+    });
+
+    const result = await service.optionChain({ underlying: "AAPL" });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.contracts[0]?.rho).toBe(0.42);
+    }
+  });
 });
 
 describe("createAlpacaClient", () => {
@@ -198,34 +219,26 @@ describe("createAlpacaClient", () => {
     });
   });
 
-  it("builds stock snapshot, option chain, and asset requests", async () => {
+  it("builds option chain requests", async () => {
     const urls: string[] = [];
     const client = createAlpacaClient({
       credentials: { key: "key-1", secret: "secret-1" },
       fetchFn: (async (input) => {
         urls.push(String(input));
-        return createJsonResponse(
-          urls.length === 3 ? { symbol: "BRK.B" } : { snapshots: {} },
-        );
+        return createJsonResponse({ snapshots: {} });
       }) as typeof fetch,
     });
 
-    await client.stockSnapshots({ symbols: ["TSLA"], feed: "sip" });
     await client.optionChain({
       underlying: "AAPL",
       expiration: "2024-02-16",
       type: "call",
       limit: 10,
     });
-    await client.asset({ symbol: "BRK.B" });
 
     expect(urls[0]).toBe(
-      "https://data.alpaca.markets/v2/stocks/snapshots?symbols=TSLA&feed=sip",
-    );
-    expect(urls[1]).toBe(
       "https://data.alpaca.markets/v1beta1/options/snapshots/AAPL?type=call&expiration_date=2024-02-16&limit=10",
     );
-    expect(urls[2]).toBe("https://paper-api.alpaca.markets/v2/assets/BRK.B");
   });
 
   it("throws useful HTTP errors", async () => {
@@ -235,8 +248,8 @@ describe("createAlpacaClient", () => {
         new Response("bad key", { status: 403 })) as typeof fetch,
     });
 
-    await expect(
-      client.asset({ symbol: "AAPL" }),
-    ).rejects.toThrow("Alpaca API error 403: bad key");
+    await expect(client.optionChain({ underlying: "AAPL" })).rejects.toThrow(
+      "Alpaca API error 403: bad key",
+    );
   });
 });

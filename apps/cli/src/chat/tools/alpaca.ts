@@ -1,16 +1,16 @@
 import {
   createAlpacaClient,
   createAlpacaMarketDataService,
-  type AlpacaCredentials,
   type NormalizedOption,
   type NormalizedPrice,
 } from "@repo/alpaca";
 import { tool } from "ai";
 import { z } from "zod";
+import { getCredentials } from "@/utils/alpaca/helpers";
 
 const MAX_SYMBOLS = 25;
 const DEFAULT_OPTIONS_LIMIT = 100;
-const MAX_OPTIONS_LIMIT = 200;
+const MAX_OPTIONS_LIMIT = 1000;
 
 type AlpacaToolError = {
   ok: false;
@@ -29,19 +29,6 @@ type AlpacaOptionsToolSuccess = {
   underlying: string;
   contracts: NormalizedOption[];
 };
-
-function getCredentials(): AlpacaCredentials {
-  const key = process.env.ALPACA_API_KEY;
-  const secret = process.env.ALPACA_API_SECRET;
-
-  if (!key || !secret) {
-    throw new Error(
-      "Missing credentials. Set ALPACA_API_KEY and ALPACA_API_SECRET.",
-    );
-  }
-
-  return { key, secret };
-}
 
 function createMarketDataService() {
   return createAlpacaMarketDataService({
@@ -118,7 +105,7 @@ const alpacaOptionsInputSchema = z
       .min(1)
       .max(MAX_OPTIONS_LIMIT)
       .optional()
-      .describe("Maximum number of contracts to return (1-200)."),
+      .describe("Maximum number of contracts to return (1-1000)."),
   })
   .strict();
 

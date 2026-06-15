@@ -1,21 +1,16 @@
 import type {
-  AlpacaAsset,
   AlpacaCredentials,
   LatestTradesResponse,
-  NormalizedAsset,
   NormalizedOption,
   NormalizedPrice,
-  NormalizedStockSnapshot,
   OptionChainResponse,
   OptionSnapshot,
   OptionType,
-  StockSnapshotsResponse,
 } from "./types";
 import { requestAlpacaJson, type AlpacaFetchFn } from "./http";
 
 const DEFAULT_STOCKS_DATA_BASE_URL = "https://data.alpaca.markets/v2";
 const DEFAULT_OPTIONS_DATA_BASE_URL = "https://data.alpaca.markets/v1beta1";
-const DEFAULT_TRADING_BASE_URL = "https://paper-api.alpaca.markets/v2";
 const DEFAULT_STOCK_FEED = "iex";
 const DEFAULT_OPTION_LIMIT = 100;
 
@@ -28,18 +23,9 @@ export type LatestPricesPayload = {
   prices: Record<string, NormalizedPrice | null>;
 };
 
-export type StockSnapshotsPayload = {
-  symbols: string[];
-  snapshots: Record<string, NormalizedStockSnapshot | null>;
-};
-
 export type OptionChainPayload = {
   underlying: string;
   contracts: NormalizedOption[];
-};
-
-export type AssetPayload = {
-  asset: NormalizedAsset;
 };
 
 export type AlpacaMarketDataClient = {
@@ -48,19 +34,12 @@ export type AlpacaMarketDataClient = {
     feed: string;
   }): Promise<LatestTradesResponse>;
 
-  stockSnapshots(input: {
-    symbols: string[];
-    feed: string;
-  }): Promise<StockSnapshotsResponse>;
-
   optionChain(input: {
     underlying: string;
     expiration?: string;
     type?: OptionType;
     limit?: number;
   }): Promise<OptionChainResponse>;
-
-  asset(input: { symbol: string }): Promise<AlpacaAsset>;
 };
 
 export type AlpacaMarketDataService = {
@@ -69,19 +48,12 @@ export type AlpacaMarketDataService = {
     feed?: string;
   }): Promise<AlpacaResult<LatestPricesPayload>>;
 
-  stockSnapshots(input: {
-    symbols: string[];
-    feed?: string;
-  }): Promise<AlpacaResult<StockSnapshotsPayload>>;
-
   optionChain(input: {
     underlying: string;
     expiration?: string;
     type?: OptionType;
     limit?: number;
   }): Promise<AlpacaResult<OptionChainPayload>>;
-
-  asset(input: { symbol: string }): Promise<AlpacaResult<AssetPayload>>;
 };
 
 export function createAlpacaMarketDataService(options: {
@@ -122,32 +94,6 @@ export function createAlpacaMarketDataService(options: {
       });
     },
 
-    async stockSnapshots(input) {
-      const symbols = normalizeSymbols(input.symbols);
-      if (symbols.length === 0) {
-        return { ok: false, error: "Provide at least one valid symbol." };
-      }
-
-      return withResult(async () => {
-        const response = await client.stockSnapshots({
-          symbols,
-          feed: input.feed ?? stockFeed,
-        });
-        const normalized = normalizeStockSnapshots(response);
-        const snapshots: Record<string, NormalizedStockSnapshot | null> = {};
-        const warnings: string[] = [];
-
-        for (const symbol of symbols) {
-          snapshots[symbol] = normalized[symbol] ?? null;
-          if (!normalized[symbol]) {
-            warnings.push(`No stock snapshot found for ${symbol}.`);
-          }
-        }
-
-        return { symbols, snapshots, warnings };
-      });
-    },
-
     async optionChain(input) {
       const underlying = normalizeSymbol(input.underlying);
       if (!underlying) {
@@ -155,30 +101,26 @@ export function createAlpacaMarketDataService(options: {
       }
 
       return withResult(async () => {
+        const limit = input.limit ?? optionLimit;
         const response = await client.optionChain({
           underlying,
           expiration: input.expiration,
           type: input.type,
-          limit: input.limit ?? optionLimit,
+          limit,
         });
+
+        const warnings: string[] = [];
+        if (response.next_page_token) {
+          warnings.push(
+            `Option chain truncated at ${limit} contracts; more available.`,
+          );
+        }
 
         return {
           underlying,
           contracts: normalizeOptionChainResponse(response),
-          warnings: [],
+          warnings,
         };
-      });
-    },
-
-    async asset(input) {
-      const symbol = normalizeSymbol(input.symbol);
-      if (!symbol) {
-        return { ok: false, error: "Provide a valid symbol." };
-      }
-
-      return withResult(async () => {
-        const asset = await client.asset({ symbol });
-        return { asset: normalizeAsset(asset), warnings: [] };
       });
     },
   };
@@ -203,15 +145,6 @@ export function createAlpacaClient(options: {
       );
     },
 
-    stockSnapshots(input) {
-      const params = new URLSearchParams();
-      params.set("symbols", input.symbols.join(","));
-      params.set("feed", input.feed);
-      return requestJson<StockSnapshotsResponse>(
-        `${DEFAULT_STOCKS_DATA_BASE_URL}/stocks/snapshots?${params}`,
-      );
-    },
-
     optionChain(input) {
       const url = new URL(
         `${DEFAULT_OPTIONS_DATA_BASE_URL}/options/snapshots/${input.underlying}`,
@@ -230,12 +163,6 @@ export function createAlpacaClient(options: {
       }
 
       return requestJson<OptionChainResponse>(url.toString());
-    },
-
-    asset(input) {
-      return requestJson<AlpacaAsset>(
-        `${DEFAULT_TRADING_BASE_URL}/assets/${encodeURIComponent(input.symbol)}`,
-      );
     },
   };
 }
@@ -263,41 +190,6 @@ function normalizeLatestTrades(
   }
 
   return output;
-}
-
-function normalizeStockSnapshots(
-  response: StockSnapshotsResponse,
-): Record<string, NormalizedStockSnapshot> {
-  const output: Record<string, NormalizedStockSnapshot> = {};
-
-  for (const [symbol, snapshot] of Object.entries(response ?? {})) {
-    output[symbol] = {
-      symbol,
-      latestTrade: snapshot.latestTrade
-        ? {
-            symbol,
-            price: snapshot.latestTrade.p,
-            timestamp: snapshot.latestTrade.t,
-            exchange: snapshot.latestTrade.x,
-          }
-        : undefined,
-      previousDailyBar: snapshot.previousDailyBar,
-      dailyBar: snapshot.dailyBar,
-    };
-  }
-
-  return output;
-}
-
-function normalizeAsset(asset: AlpacaAsset): NormalizedAsset {
-  return {
-    symbol: asset.symbol,
-    name: asset.name,
-    exchange: asset.exchange,
-    assetClass: asset.class,
-    status: asset.status,
-    tradable: asset.tradable ?? false,
-  };
 }
 
 function parseOptionSymbol(symbol: string): {
@@ -356,6 +248,7 @@ function applySnapshotToOption(
     normalized.gamma = snapshot.greeks.gamma;
     normalized.theta = snapshot.greeks.theta;
     normalized.vega = snapshot.greeks.vega;
+    normalized.rho = snapshot.greeks.rho;
   }
 }
 
